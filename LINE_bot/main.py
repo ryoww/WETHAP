@@ -3,7 +3,7 @@ from flask import *
 app = Flask(__name__)
 
 
-# クエリがない状態、動作確認用に
+# クエリなし、動作確認用に
 @app.route("/", methods = ["GET"])
 def root():
 
