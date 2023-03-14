@@ -1,6 +1,5 @@
 # flask run
-# sudo systemctl start nginxi
-#
+# ngrok http 5000
 
 from flask import Flask, request, abort
 
@@ -14,12 +13,15 @@ from linebot.models import (
     MessageEvent, TextMessage, TextSendMessage,
 )
 
+from key import at, sk
+
 import pprint
+import datetime
 
 app = Flask(__name__)
 
-line_bot_api = LineBotApi('2kBmfbN8P9Rda5VaWC8th4KV8xcHW84xIMcl72P9k9AFFw07b5aZYbxH+hUOkG81nHt6ZKt9IDjShB9IDLrIWLoyjIuk8M5nSpRSYpPdIRjXvS4Cl7VRGq3EyeqbxS+qmyxXBmKtEW1GHLY3xYxq2wdB04t89/1O/w1cDnyilFU=')
-handler = WebhookHandler('71ec82449abc71158b725a75a9ab3205')
+line_bot_api = LineBotApi(at)
+handler = WebhookHandler(sk)
 
 @app.route("/", methods=['GET'])
 def test():
@@ -44,17 +46,72 @@ def callback():
     return 'OK'
 
 
-@handler.add(MessageEvent, message=TextMessage)
+# set situation
+STATE_INITIAL = 0
+STATE_LOCATION_RECEIVED = 1
+STATE_DATE_RECEIVED = 2
+
+
+# process initial situation
+def initial_state(event):
+
+    # 後で登録されてない場所だったらstate_initalに変更
+
+    text = "情報を知りたい研究室又は実験室を教えてください。"
+
+    line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
+    # change situation submitted location
+    return STATE_LOCATION_RECEIVED
+
+# process after submitted location
+def location_received_state(event, location):
+    text = (f"{location}の情報を知りたい日付を教えてください。(例:4月1日)")
+
+    line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
+    # change initial situation
+    return STATE_DATE_RECEIVED
+
+state = STATE_INITIAL
+location = ""
+
+@handler.add(MessageEvent,message=TextMessage)
 def handle_message(event):
-    pprint.pprint(event)
+    global state, location
 
-    text=event.message.text
-    print(text)
+    if event.message.text == "教えて":
+        # set initial state
+        state = STATE_INITIAL
+        location = ""
+        state = initial_state(event)
 
-    line_bot_api.reply_message(
-        event.reply_token,
-        TextSendMessage(text))
+    elif state == STATE_LOCATION_RECEIVED:
+        # get location
+        location = event.message.text
+        state = location_received_state(event, location)
 
+    elif state == STATE_DATE_RECEIVED:
+        # get day
+        if "月" in event.message.text and "日" in event.message.text:
+            date_str = event.message.text
+            date = datetime.datetime.strptime(date_str, "%m月%d日")
+            info = get_information(location, date)
+
+            text = (f"{date_str}の{location}の情報は以下の通りです")
+            line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
+
+            # set initial state
+            state = STATE_INITIAL
+            location = ""
+
+        else:
+
+            text = "「教えて」と入力すると情報を教えてくれます。場所を指定すると日付を聞かれます。日付を指定すると情報を返します。"
+
+            line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
+
+def get_information(location, date):
+
+    return "情報"
 
 if __name__ == "__main__":
     app.run()
