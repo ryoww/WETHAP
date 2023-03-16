@@ -17,6 +17,9 @@ from key import at, sk
 
 import pprint
 import datetime
+import re
+
+now = datetime.datetime.now()
 
 app = Flask(__name__)
 
@@ -91,12 +94,22 @@ def handle_message(event):
 
     elif state == STATE_DATE_RECEIVED:
         # get day
-        if "月" in event.message.text and "日" in event.message.text:
-            date_str = event.message.text
-            date = datetime.datetime.strptime(date_str, "%m月%d日")
-            info = get_information(location, date)
+        if "月" in event.message.text and "日" in event.message.text and "限" in event.message.text:
 
-            text = (f"{date_str}の{location}の情報は以下の通りです")
+            text = event.message.text
+            pattern = r"(\d{1,2}月\d{1,2}日)(\d+)限"
+            match = re.search(pattern, text)
+            date_str, class_num_str = match.groups()
+            date = datetime.strptime(date_str, "%m月%d日").date()
+            class_num = int(class_num_str)
+
+            print(date)
+            print(class_num)
+
+            info = get_information(location, date, class_num)
+
+
+            text = (f"{text}の{location}の情報は以下の通りです")
             line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
 
             # set initial state
@@ -109,7 +122,7 @@ def handle_message(event):
 
             line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
 
-def get_information(location, date):
+def get_information(location, date, class_num):
 
     return "情報"
 
