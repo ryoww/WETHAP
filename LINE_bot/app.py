@@ -15,9 +15,9 @@ from linebot.models import (
 
 from key import at, sk
 
-import pprint
-import datetime
+
 import re
+from datetime import datetime
 from fetch_info import fetchInfo
 
 app = Flask(__name__)
@@ -53,12 +53,27 @@ STATE_INITIAL = 0
 STATE_LOCATION_RECEIVED = 1
 STATE_DATE_RECEIVED = 2
 
+# end time
+endTime = {
+    1: "9:25",
+    2: "10:10",
+    3: "11:10",
+    4: "11:55",
+    5: "13:30",
+    6: "14:15",
+    7: "15:15",
+    8: "16:00",
+    9: "17:00",
+    10: "17:45",
+    11: "18:45",
+    12: "19:30"
+    }
+
+# rooms list
+rooms = ["下沢家"]
 
 # process initial situation
 def initial_state(event):
-
-    # 後で登録されてない場所だったらstate_initalに変更
-
     text = "情報を知りたい研究室又は実験室を教えてください。"
 
     line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
@@ -67,11 +82,23 @@ def initial_state(event):
 
 # process after submitted location
 def location_received_state(event, location):
-    text = (f"{location}の情報を知りたい日付を教えてください。(例:4月1日)")
 
-    line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
-    # change initial situation
-    return STATE_DATE_RECEIVED
+    if location in rooms:
+        text = (f"{location}の情報を知りたい日付と実験時間を教えてください。(例:4月1日4限)")
+
+        line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
+        # change initial situation 
+        return STATE_DATE_RECEIVED
+
+    # if not registered location "plrease retype"
+    else:
+        text = "登録されている実験室又は研究室を入力ください。"
+        line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
+
+        return STATE_LOCATION_RECEIVED
+
+
+
 
 state = STATE_INITIAL
 location = ""
@@ -109,24 +136,50 @@ def handle_message(event):
             print(date)
             print(num_gen)
 
-            # nowdatetime = now.strftime("%m/%d/%H:%M")
-            # now_day = now.strftime("%m/%d")
+            nowtime = now.strftime("%H:%M")
+            now_day = now.strftime("%m/%d")
 
-            if 1 >= num_gen <= 12:
+            if 1 > num_gen < 12:
                 text = "1~12限を入力してください"
                 line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
 
+            elif date > now_day:
+                text = "いつからWETHAPが未来を観測できると錯覚していた？もう一度入力しやがれ！！"
+                line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
 
+            elif date < "3/16":
+                text = "データがありません"
+                line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
 
+            elif date == now_day and endTime[num_gen] > nowtime:
+                text = "反映までもう少々お待ちください。"
+                line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
 
             else:
+                print(location)
+                print(date)
+                print(num_gen)
                 info = fetchInfo(location, date, num_gen)
-                text = (f"{text}の{location}の情報は以下の通りです\n{info}")
+                T = info["temperature"]
+                H = info["humidity"]
+                AP = info["pressure"]
+                WE = info["wether"]
+                text = (f"{text}の{location}の情報は以下の通りです\n気温 : {T}℃\n湿度 : {H}%\n気圧 : {AP}hPa\n天気 : {WE}")
                 line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
+
 
                 # set initial state
                 state = STATE_INITIAL
                 location = ""
+
+        else :
+            text = "正しく入力してください。"
+            line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
+
+    else:
+        text = "「教えて」と入力すると情報を教えてくれます。場所を指定すると日付を聞かれます。日付を指定すると情報を返します。"
+
+        line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
 
 
 if __name__ == "__main__":
