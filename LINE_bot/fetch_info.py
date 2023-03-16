@@ -23,19 +23,9 @@ def fetchInfo(location: str, date: str, num_gen: int):
     fetchedData = json.loads(response.text)
     inputDate = str(datetime.now().year) + "/" + date + "/" + endTime[num_gen]
 
-    return (
-        fetchedData[inputDate]["temperature"],
-        fetchedData[inputDate]["humidity"],
-        fetchedData[inputDate]["pressure"],
-        fetchedData[inputDate]["wether"]
-    )
+    return fetchedData[inputDate]
 
 if __name__ == "__main__":
-    temperature, humidity, pressure, wether = fetchInfo("下沢家", "3/16", 8)
+    infoDict= fetchInfo("下沢家", "3/16", 8)
 
-    print(
-        temperature,
-        humidity,
-        pressure,
-        wether
-    )
+    print(infoDict)
