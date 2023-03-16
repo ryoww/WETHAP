@@ -17,6 +17,7 @@ from key import at, sk
 
 import pprint
 import datetime
+from fetch_info import fetchInfo
 
 app = Flask(__name__)
 
@@ -109,9 +110,6 @@ def handle_message(event):
 
             line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
 
-def get_information(location, date):
-
-    return "情報"
 
 if __name__ == "__main__":
     app.run()
