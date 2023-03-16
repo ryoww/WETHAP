@@ -17,6 +17,7 @@ from key import at, sk
 
 import pprint
 import datetime
+import re
 from fetch_info import fetchInfo
 
 app = Flask(__name__)
@@ -77,7 +78,9 @@ location = ""
 
 @handler.add(MessageEvent,message=TextMessage)
 def handle_message(event):
-    global state, location
+    global state, location, date, num_gen
+
+    now = datetime.now()
 
     if event.message.text == "教えて":
         # set initial state
@@ -99,26 +102,31 @@ def handle_message(event):
             match = re.search(pattern, text)
             date_str, class_num_str = match.groups()
             date = datetime.strptime(date_str, "%m月%d日").date()
-            class_num = int(class_num_str)
+            num_gen = int(class_num_str)
+
+            date = datetime.strftime(date, "%m/%d")
 
             print(date)
-            print(class_num)
+            print(num_gen)
 
-            info = get_information(location, date, class_num)
+            # nowdatetime = now.strftime("%m/%d/%H:%M")
+            # now_day = now.strftime("%m/%d")
+
+            if 1 >= num_gen <= 12:
+                text = "1~12限を入力してください"
+                line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
 
 
-            text = (f"{text}の{location}の情報は以下の通りです")
-            line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
 
-            # set initial state
-            state = STATE_INITIAL
-            location = ""
 
-        else:
+            else:
+                info = fetchInfo(location, date, num_gen)
+                text = (f"{text}の{location}の情報は以下の通りです\n{info}")
+                line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
 
-            text = "「教えて」と入力すると情報を教えてくれます。場所を指定すると日付を聞かれます。日付を指定すると情報を返します。"
-
-            line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
+                # set initial state
+                state = STATE_INITIAL
+                location = ""
 
 
 if __name__ == "__main__":
