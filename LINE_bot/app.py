@@ -15,7 +15,7 @@ from linebot.models import (
 
 from key import at, sk
 
-
+import pprint
 import re
 from datetime import datetime
 from fetch_info import fetchInfo
@@ -69,11 +69,15 @@ endTime = {
     12: "19:30"
     }
 
+# lower limit date
+mindate = datetime(2023,3,15).date()
+
 # rooms list
 rooms = ["下沢家"]
 
 # process initial situation
 def initial_state(event):
+
     text = "情報を知りたい研究室又は実験室を教えてください。"
 
     line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
@@ -87,7 +91,7 @@ def location_received_state(event, location):
         text = (f"{location}の情報を知りたい日付と実験時間を教えてください。(例:4月1日4限)")
 
         line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
-        # change initial situation 
+        # change initial situation
         return STATE_DATE_RECEIVED
 
     # if not registered location "plrease retype"
@@ -97,9 +101,6 @@ def location_received_state(event, location):
 
         return STATE_LOCATION_RECEIVED
 
-
-
-
 state = STATE_INITIAL
 location = ""
 
@@ -108,8 +109,12 @@ def handle_message(event):
     global state, location, date, num_gen
 
     now = datetime.now()
+    now_day = now.date()
+    nowtime = now.time()
 
-    if event.message.text == "教えて":
+    print(event.message.text)
+
+    if "教え" in event.message.text:
         # set initial state
         state = STATE_INITIAL
         location = ""
@@ -121,64 +126,71 @@ def handle_message(event):
         state = location_received_state(event, location)
 
     elif state == STATE_DATE_RECEIVED:
-        # get day
-        if "月" in event.message.text and "日" in event.message.text and "限" in event.message.text:
+        # try :
+            # get day
+            if "月" in event.message.text and "日" in event.message.text and "限" in event.message.text:
 
-            text = event.message.text
-            pattern = r"(\d{1,2}月\d{1,2}日)(\d+)限"
-            match = re.search(pattern, text)
-            date_str, class_num_str = match.groups()
-            date = datetime.strptime(date_str, "%m月%d日").date()
-            num_gen = int(class_num_str)
+                text = event.message.text
+                pattern = r"(\d{1,2}月\d{1,2}日)(\d+)限"
+                match = re.search(pattern, text)
+                date_str, class_num_str = match.groups()
+                date = datetime.strptime(date_str, "%m月%d日").date().replace(year = now.year)
+                num_gen = int(class_num_str)
 
-            date = datetime.strftime(date, "%m/%d")
-
-            print(date)
-            print(num_gen)
-
-            nowtime = now.strftime("%H:%M")
-            now_day = now.strftime("%m/%d")
-
-            if 1 > num_gen < 12:
-                text = "1~12限を入力してください"
-                line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
-
-            elif date > now_day:
-                text = "いつからWETHAPが未来を観測できると錯覚していた？もう一度入力しやがれ！！"
-                line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
-
-            elif date < "3/16":
-                text = "データがありません"
-                line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
-
-            elif date == now_day and endTime[num_gen] > nowtime:
-                text = "反映までもう少々お待ちください。"
-                line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
-
-            else:
-                print(location)
                 print(date)
                 print(num_gen)
-                info = fetchInfo(location, date, num_gen)
-                T = info["temperature"]
-                H = info["humidity"]
-                AP = info["pressure"]
-                WE = info["wether"]
-                text = (f"{text}の{location}の情報は以下の通りです\n気温 : {T}℃\n湿度 : {H}%\n気圧 : {AP}hPa\n天気 : {WE}")
+                endtime = datetime.strptime(endTime[num_gen],"%H:%M").time()
+
+
+
+                if 1 > num_gen < 12:
+                    text = "1~12限を入力してください"
+                    line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
+
+                elif date > now_day:
+                    text = "いつからWETHAPが未来を観測できると錯覚していた？もう一度入力しやがれ！！"
+                    line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
+
+                elif date <= mindate:
+                    text = "データがありません"
+                    line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
+
+                elif date == now_day and endtime > nowtime:
+                    text = "反映までもう少々お待ちください。"
+                    line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
+
+
+                else:
+                    date = datetime.strftime(date, "%m/%d")
+                    print(location)
+                    print(date)
+                    print(num_gen)
+                    info = fetchInfo(location, date, num_gen)
+                    T = info["temperature"]
+                    H = info["humidity"]
+                    AP = info["pressure"]
+                    WE = info["weather"]
+                    text = (f"{text}の{location}の情報は以下の通りです\n気温 : {T}℃\n湿度 : {H}%\n気圧 : {AP}hPa\n天気 : {WE}")
+                    line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
+
+                    # set initial state
+                    state = STATE_INITIAL
+                    location = ""
+
+
+
+            else :
+                text = "正しく入力又は半角数字でしてください。あ"
                 line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
 
-
-                # set initial state
-                state = STATE_INITIAL
-                location = ""
-
-        else :
-            text = "正しく入力してください。"
-            line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
+        # except Exception as e:
+        #     print(e)
+        #     text = "正しく入力又は半角数字でしてください。"
+        #     line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
 
     else:
-        text = "「教えて」と入力すると情報を教えてくれます。場所を指定すると日付を聞かれます。日付を指定すると情報を返します。"
 
+        text = "「教えて」と入力すると情報を教えてくれます。場所を指定すると日付を聞かれます。日付を指定すると情報を返します。"
         line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
 
 
