@@ -2,28 +2,14 @@ import requests
 import json
 from datetime import datetime
 
-API_URL = "https://adelppi.duckdns.org/getInfo"
-endTime = {
-    1: "9:25",
-    2: "10:10",
-    3: "11:10",
-    4: "11:55",
-    5: "13:30",
-    6: "14:15",
-    7: "15:15",
-    8: "16:00",
-    9: "17:00",
-    10: "17:45",
-    11: "18:45",
-    12: "19:30"
-    }
+API_BASE_URL = "http://localhost/getInfo"
 
 def fetchInfo(location: str, date: str, num_gen: int):
-    response = requests.get(API_URL)
+    inputURL = API_BASE_URL + "/?location=高専&year=2023&month=03&day=16&num_gen=8"
+    response = requests.get(inputURL)
     fetchedData = json.loads(response.text)
-    inputDate = str(datetime.now().year) + "/" + date + "/" + endTime[num_gen]
 
-    return fetchedData[inputDate]
+    return fetchedData
 
 if __name__ == "__main__":
     infoDict= fetchInfo("下沢家", "3/16", 8)
