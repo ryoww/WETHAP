@@ -1,5 +1,4 @@
 import sqlite3
-import json
 
 class DBCommands:
     def __init__(self, DB_PATH):
