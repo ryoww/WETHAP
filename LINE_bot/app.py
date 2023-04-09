@@ -18,6 +18,7 @@ from key import at, sk
 import pprint
 import re
 from datetime import datetime
+from datetime import date
 from fetch_info import fetchInfo
 
 app = Flask(__name__)
@@ -55,25 +56,26 @@ STATE_DATE_RECEIVED = 2
 
 # end time
 endTime = {
-    1: "9:25",
-    2: "10:10",
-    3: "11:10",
-    4: "11:55",
-    5: "13:30",
-    6: "14:15",
-    7: "15:15",
-    8: "16:00",
-    9: "17:00",
+    1 : "09:25",
+    2 : "10:10",
+    3 : "11:10",
+    4 : "11:55",
+    5 : "13:30",
+    6 : "14:15",
+    7 : "15:15",
+    8 : "16:00",
+    9 : "17:00",
     10: "17:45",
     11: "18:45",
     12: "19:30"
     }
 
 # lower limit date
-mindate = datetime(2023,3,15).date()
+mindate = datetime(2023,3,16).date()
 
 # rooms list
-rooms = ["下沢家"]
+rooms = ["下沢家","テスト研究室"]
+
 
 # process initial situation
 def initial_state(event):
@@ -84,6 +86,7 @@ def initial_state(event):
     # change situation submitted location
     return STATE_LOCATION_RECEIVED
 
+
 # process after submitted location
 def location_received_state(event, location):
 
@@ -91,7 +94,7 @@ def location_received_state(event, location):
         text = (f"{location}の情報を知りたい日付と実験時間を教えてください。(例:4月1日4限)")
 
         line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
-        # change initial situation
+        # change initial situation  
         return STATE_DATE_RECEIVED
 
     # if not registered location "plrease retype"
@@ -101,6 +104,31 @@ def location_received_state(event, location):
 
         return STATE_LOCATION_RECEIVED
 
+
+id_dict = {}
+
+def update_id_dict(id,**update_data):
+    if id in id_dict:
+        for key, value in update_data.items():
+            id_dict[id][key] = value
+    else:
+        print(f"{id} not found")
+
+def delete_data(id):
+    if id in id_dict:
+        del id_dict[id]
+    else:
+        print(f"{id} not found")
+
+def add_data(id,**new_data):
+    if id in id_dict:
+        print(f"{id} already exists")
+    else:
+        id_dict[id] = new_data
+
+
+
+
 state = STATE_INITIAL
 location = ""
 
@@ -108,11 +136,15 @@ location = ""
 def handle_message(event):
     global state, location, date, num_gen
 
+    print(state)
+
     now = datetime.now()
     now_day = now.date()
     nowtime = now.time()
 
+    pprint.pprint(event)
     print(event.message.text)
+    # print(event)
 
     if "教え" in event.message.text:
         # set initial state
@@ -138,9 +170,7 @@ def handle_message(event):
                 num_gen = int(class_num_str)
 
                 print(date)
-                print(num_gen)
                 endtime = datetime.strptime(endTime[num_gen],"%H:%M").time()
-
 
 
                 if 1 > num_gen < 12:
@@ -151,7 +181,7 @@ def handle_message(event):
                     text = "いつからWETHAPが未来を観測できると錯覚していた？もう一度入力しやがれ！！"
                     line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
 
-                elif date <= mindate:
+                elif date < mindate:
                     text = "データがありません"
                     line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
 
@@ -159,24 +189,28 @@ def handle_message(event):
                     text = "反映までもう少々お待ちください。"
                     line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
 
-
-                else:
-                    date = datetime.strftime(date, "%m/%d")
-                    print(location)
-                    print(date)
-                    print(num_gen)
-                    info = fetchInfo(location, date, num_gen)
-                    T = info["temperature"]
-                    H = info["humidity"]
-                    AP = info["pressure"]
-                    WE = info["weather"]
-                    text = (f"{text}の{location}の情報は以下の通りです\n気温 : {T}℃\n湿度 : {H}%\n気圧 : {AP}hPa\n天気 : {WE}")
-                    line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
-
                     # set initial state
                     state = STATE_INITIAL
                     location = ""
 
+
+                else:
+                        # 4/1~submit
+                        # if 3 >= now.month >= 1 and 12 >= date.month >= 4:
+                        #     date.replace(year =  now.year - 1)
+
+
+                        info = fetchInfo(location, date, num_gen)
+                        T = info["temperature"]
+                        H = info["humidity"]
+                        AP = info["pressure"]
+                        WE = info["weather"]
+                        text = (f"{date.year}年{text}の{location}の情報は以下の通りです\n気温 : {T}℃\n湿度 : {H}%\n気圧 : {AP}hPa\n天気 : {WE}")
+                        line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
+
+                        # set initial state
+                        state = STATE_INITIAL
+                        location = ""
 
 
             else :
@@ -191,6 +225,7 @@ def handle_message(event):
     else:
 
         text = "「教えて」と入力すると情報を教えてくれます。場所を指定すると日付を聞かれます。日付を指定すると情報を返します。"
+
         line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
 
 
