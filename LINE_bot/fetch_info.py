@@ -1,31 +1,22 @@
 import requests
 import json
 from datetime import datetime
+from datetime import date
 
-API_URL = "https://adelppi.duckdns.org/getInfo"
-endTime = {
-    1: "9:25",
-    2: "10:10",
-    3: "11:10",
-    4: "11:55",
-    5: "13:30",
-    6: "14:15",
-    7: "15:15",
-    8: "16:00",
-    9: "17:00",
-    10: "17:45",
-    11: "18:45",
-    12: "19:30"
-    }
+API_BASE_URL = "https://adelppi.duckdns.org/getInfo"
 
-def fetchInfo(location: str, date: str, num_gen: int):
-    response = requests.get(API_URL)
+# dateをyyyy/mm/ddの形で渡してdate.year,date.month,date.dayで分ける方がいい？
+def fetchInfo(location, date, num_gen):
+    inputURL = f"{API_BASE_URL}/?labID={location}&date={date.year}-{date.month}-{date.day}&numGen={num_gen}"
+    print(inputURL)
+    response = requests.get(inputURL)
     fetchedData = json.loads(response.text)
-    inputDate = str(datetime.now().year) + "/" + date + "/" + endTime[num_gen]
 
-    return fetchedData[inputDate]
+    return fetchedData
 
 if __name__ == "__main__":
-    infoDict= fetchInfo("下沢家", "3/16", 8)
+    date = date(2023,4,3)
+    print(date)
+    infoDict= fetchInfo("下沢家", date , 1)
 
     print(infoDict)
