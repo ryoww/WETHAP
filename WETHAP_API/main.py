@@ -29,6 +29,25 @@ def addInfo():
     return "added"
 
 
+@app.route("/isRegistered/", methods = ["GET"])
+def isRegistered():
+    db = DBCommands(DB_PATH = "./data.db")
+    labID = str(request.args.get("labID"))
+    isRegistered = db.isRegistered(labID = labID)
+    db.close()
+
+    return str(isRegistered)
+
+
+@app.route("/previewData/", methods = ["GET"])
+def previewData():
+    db = DBCommands(DB_PATH = "./data.db")
+    data = db.previewData()
+    db.close()
+
+    return data
+
+
 @app.route("/getInfo/", methods = ["GET"])
 def getInfo():
     db = DBCommands(DB_PATH = "./data.db")

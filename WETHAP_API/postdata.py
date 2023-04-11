@@ -4,7 +4,7 @@ URL = "http://127.0.0.1:8000/addInfo"
 
 postInfo = {
     "labID": "テスト研究室",
-    "date": "1970-1-1",
+    "date": "2023-1-1",
     "numGen": 1,
     "temperature": 0,
     "humidity": 0,
