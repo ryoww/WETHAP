@@ -165,7 +165,7 @@ def handle_message(event):
 
     # elif state == STATE_DATE_RECEIVED:
     elif str(event.source.user_id) in id_dict.keys() and id_dict[event.source.user_id]["state"] == STATE_DATE_RECEIVED:
-        # try :
+        try :
             # get day
             if "月" in event.message.text and "日" in event.message.text and "限" in event.message.text:
 
@@ -224,10 +224,10 @@ def handle_message(event):
                 text = "正しく入力又は半角数字でしてください。あ"
                 line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
 
-        # except Exception as e:
-        #     print(e)
-        #     text = "正しく入力又は半角数字でしてください。"
-        #     line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
+        except Exception as e:
+            print(e)
+            text = "正しく入力又は半角数字でしてください。"
+            line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
 
     else:
 
