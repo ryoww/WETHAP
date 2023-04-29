@@ -1,6 +1,7 @@
 from flask import *
 from datetime import datetime
 from DBManage import DBCommands
+from fetchWeather import fetchWeather
 import json
 
 app = Flask(__name__)
@@ -23,7 +24,7 @@ def addInfo():
         temperature = data["temperature"],
         humidity = data["humidity"],
         pressure = data["pressure"],
-        weather = data["weather"])
+        weather = fetchWeather())
     db.close()
 
     return "added"
