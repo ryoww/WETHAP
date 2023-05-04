@@ -8,8 +8,7 @@ postInfo = {
     "numGen": 1,
     "temperature": 0,
     "humidity": 0,
-    "pressure": 0,
-    "weather": "晴れ"
+    "pressure": 0
 }
 
 response = requests.post(URL, json = postInfo)
