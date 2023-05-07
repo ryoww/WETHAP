@@ -1,16 +1,16 @@
 from flask import *
+from flask_cors import CORS
 from datetime import datetime
 from DBManage import DBCommands
 from fetchWeather import fetchWeather
 import json
 
 app = Flask(__name__)
-
+CORS(app, supports_credentials = True)
 
 @app.route("/", methods = ["GET"])
-def root():
-
-    return {"status": "online"}
+def index():
+    return {"status":"online"}
 
 
 @app.route("/addInfo/", methods = ["POST"])
@@ -20,7 +20,7 @@ def addInfo():
     db.insert(
         labID = data["labID"],
         numGen = data["numGen"],
-        date = data["date"],
+        date = datetime.now().strftime("%Y-%-m-%-d"),
         temperature = data["temperature"],
         humidity = data["humidity"],
         pressure = data["pressure"],
