@@ -125,6 +125,13 @@ def add_data(id,**new_data):
         id_dict[id] = new_data
 
 
+# every week send
+every_week_dict = {}
+def register_id(id,**new_data):
+    if id in every_week_dict.keys():
+        print(f"{id} already exists")
+    else:
+        every_week_dict[id] = new_data
 
 
 state = STATE_INITIAL
@@ -148,6 +155,9 @@ def handle_message(event):
 
     print(id_dict)
 
+    if "!登録" in event.message.text:
+        register_id(event.source.user_id,)
+
     if "教え" in event.message.text:
         # set inital state and register id
         if str(event.source.user_id) not in id_dict.keys():
@@ -165,7 +175,7 @@ def handle_message(event):
 
     # elif state == STATE_DATE_RECEIVED:
     elif str(event.source.user_id) in id_dict.keys() and id_dict[event.source.user_id]["state"] == STATE_DATE_RECEIVED:
-        # try :
+        try :
             # get day
             if "月" in event.message.text and "日" in event.message.text and "限" in event.message.text:
 
@@ -224,10 +234,10 @@ def handle_message(event):
                 text = "正しく入力又は半角数字でしてください。あ"
                 line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
 
-        # except Exception as e:
-        #     print(e)
-        #     text = "正しく入力又は半角数字でしてください。"
-        #     line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
+        except Exception as e:
+            print(e)
+            text = "正しく入力又は半角数字でしてください。"
+            line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
 
     else:
 
