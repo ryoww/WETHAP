@@ -112,7 +112,7 @@ while True:
             if is_display:
                 display.fill(0)
                 display.text("time update", 20, 24)
-                display.text("successed", 28, 32)
+                display.text("succeed", 36, 32)
                 display.show()
 
     # セットアップ完了で点灯
@@ -127,9 +127,8 @@ while True:
         day += 1
 
     print(t0)
-    # print("{}".format(rtc.datetime()))
-    print("Temp:{:.3g}C, Humidity:{:.3g}%, Pressure:{:.5g}hPa, Gas:{}".format(bme.temperature, bme.humidity, bme.pressure, bme.gas))
-    print("{}-{}-{} {}:{}:{}".format(t0[0], t0[1], day, hour, t0[5], t0[6]))
+    print(f"Temp:{bme.temperature:.3g}C, Humidity:{bme.humidity:.3g}%, Pressure:{bme.pressure:.5g}hPa, Gas:{bme.gas}")
+    print(f"{t0[0]}-{t0[1]}-{day} {hour}:{t0[5]}:{t0[6]}")
 
     # 取得データ表示
     # NOTE: 此処の処理でループ時間約1秒増加してる
@@ -145,62 +144,32 @@ while True:
         display.text(f"Gas:{bme.gas}", 20, 55)
         display.show()
 
-    # data = {}
-
-    #    year = now[0]
-    #    month = now[1]
-    #    day = now[2]
-    # sec = now[5]
-
-    # nowtime = ("{:02d}:{:02d}".format(rtc.datetime()[4],rtc.datetime()[5]))
-    nowtime = "{:02d}:{:02d}".format(hour, t0[5])
-    # print(now)
+    nowtime = f"{hour:02d}:{t0[5]:02d}"
 
     sec = t0[6]
-    print(sec)
+    # print(sec)
 
-    # if sec % 5 == 0:
-    # if nowtime in finish_time and sec in [0, 1]:
     if is_init and nowtime in finish_time and sec in range(loop_time):
-        #    print("success")
-        # if nowtime in finish_time and rtc.datetime()[6] in [0,1]:
-        # wesult = requests.get("https://weathernews.jp/onebox/35.731350/139.798464/q=%E5%8D%97%E5%8D%83%E4%BD%8F%EF%BC%88%E6%9D%B1%E4%BA%AC%E9%83%BD%EF%BC%89&v=e8be546f5505407d1788791e7e7b3b0c15fbfd38af41f3dab5a6d2b88cb74d84&temp=c&lang=ja")
-
-        # soup = BeautifulSoup(result.text,"html.parser")
-
-        # tags = soup.find("ul",class_="weather-now__ul")
-        # p_tit_tags = tags.li.text
-
-        # weather = p_tit_tags
-
         data = {
             "labID": labID,
-            # "time"        : "{}-{}-{} {}:{}:{}".format(t0[0], t0[1], day, hour, t0[5], t0[6]),
-            # "date"        : "{}-{}-{} {}:{}:{}".format(t0[0], t0[1], day, hour, t0[5], t0[6]),
-            # "date"        : "{}-{:02d}-{:02d}".format(year,month,day),
-            # "date"        : "{}-{}-{}".format(t0[0],t0[1],day),
             "date": f"{t0[0]}-{t0[1]:02d}-{day:02d}",
-            "numGen"      : int(finish_time.index(nowtime)) + 1,
-            # "numGen": 1,
+            "numGen": int(finish_time.index(nowtime)) + 1,
             "temperature": f"{bme.temperature:.2f}",
             "humidity": f"{bme.humidity:.3f}",
             "pressure": f"{bme.pressure:.2f}",
         }
 
-        # URL = (url,data=ujson.dumps(data))
-        # print(URL)
-
         print(data["labID"])
 
         response = urequests.post(url, data=json.dumps(data).encode("unicode_escape"), headers={"Content-Type": "application/json"})
 
-        print("{}".format(response.status_code))
-        print("{}".format(response.content))
+        print(f"{response.status_code}")
+        print(f"{response.content}")
 
         if is_display:
             if response.status_code == 200:
                 display.fill(0)
-                display.text('post:successed', 8, 0)
+                display.text('post:succeed', 8, 0)
                 display.hline(0, 9, 128, 1)
                 display.text(f'date:{data["date"]}', 4, 11)
                 display.text(f'numGen:{data["numGen"]}', (128-len(str(data["numGen"]))*8-56)//2, 22)
@@ -210,8 +179,8 @@ while True:
                 display.show()
             else:
                 display.fill(0)
-                display.text("post faild", 20, 24)
-                display.text("with {response.status_code}", 32, 32)
+                display.text("post failed", 20, 24)
+                display.text(f"with {response.status_code}", 32, 32)
                 display.show()
 
         led.off()
