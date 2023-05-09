@@ -22,7 +22,7 @@ except:
 else:
     # ssd1306接続判定用
     is_display = True
-    loop_time = 4
+    loop_time = 5
 if is_display:
     display.fill(0)
     display.text("WETHAP", 40, 0)
@@ -134,6 +134,7 @@ while True:
     # NOTE: 此処の処理でループ時間約1秒増加してる
     if is_display:
         display.fill(0)
+        display.show()
         display.text(f"{t0[0]}-{t0[1]:02d}-{day:02d}", 24, 0)
         time_disp = f"{hour:02d}:{t0[5]:02d}:{t0[6]:02d}"
         display.text(time_disp, (128-len(time_disp)*8)//2, 10)
