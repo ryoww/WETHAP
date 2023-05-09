@@ -53,7 +53,7 @@ def previewData():
 def getInfo():
     db = DBCommands(DB_PATH = "./data.db")
     labID = str(request.args.get("labID"))
-    date = str(request.args.get("date"))
+    date = datetime.strptime(str(request.args.get("date")), "%Y-%m-%d").strftime("%Y-%m-%d")
     numGen = int(request.args.get("numGen"))
     data = db.select(labID = labID, date = date, numGen = numGen)
     db.close()
