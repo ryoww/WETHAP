@@ -3,7 +3,6 @@ from machine import I2C, Pin
 import time
 import urequests
 import network
-import socket
 import json
 import machine
 import ntptime
@@ -41,8 +40,9 @@ if is_display:
 try:
     bme = BME680_I2C(I2C(0, scl=Pin(1), sda=Pin(0)))
 except Exception as err:
-    display.text("bme680 error", 16, 11)
-    display.show()
+    if is_display:
+        display.text("bme680 error", 16, 11)
+        display.show()
     raise err
 else:
     if is_display:
@@ -62,15 +62,16 @@ password = '********'
 wlan = network.WLAN(network.STA_IF)
 wlan.active(True)
 wlan.connect(ssid, password)
-if is_display:
-    if wlan.active():
+if wlan.active():
+    if is_display:
         display.text("wifi activate", 8, 22)
         display.text("connecting...", 12, 33)
         display.show()
-    else:
+else:
+    if is_display:
         display.text("wifi error", 24, 22)
         display.show()
-        raise Exception
+    raise Exception
 # wifi接続待機
 max_wait = 60
 for i in range(max_wait):
@@ -78,11 +79,13 @@ for i in range(max_wait):
     if wlan.isconnected():
         break
 if i < max_wait - 1:
-    display.text("wifi connect", 14, 44)
-    display.show()
+    if is_display:
+        display.text("wifi connect", 14, 44)
+        display.show()
 else:
-    display.text("offline", 36, 44)
-    display.show()
+    if is_display:
+        display.text("offline", 36, 44)
+        display.show()
     raise Exception
 
 
