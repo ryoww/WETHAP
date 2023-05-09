@@ -20,7 +20,7 @@ def addInfo():
     db.insert(
         labID = data["labID"],
         numGen = data["numGen"],
-        date = datetime.now().strftime("%Y-%-m-%-d"),
+        date = datetime.now().strftime("%Y-%m-%d"),
         temperature = data["temperature"],
         humidity = data["humidity"],
         pressure = data["pressure"],
