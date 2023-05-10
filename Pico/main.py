@@ -65,7 +65,7 @@ wlan = network.WLAN(network.STA_IF)
 wlan.active(True)
 wlan.connect(ssid, password)
 if is_display:
-    display.text("wifi activate", 8, 22)
+    display.text("wifi activate", 12, 22)
     display.text("connecting...", 12, 33)
     display.show()
 # wifi接続待機
@@ -75,13 +75,13 @@ for i in range(max_wait):
     if wlan.isconnected():
         print("online")
         if is_display:
-            display.text("wifi connect", 14, 44)
+            display.text("wifi connect", 16, 44)
             display.show()
         break
 else:
     print("offline")
     if is_display:
-        display.text("connect failed", 12, 44)
+        display.text("connect failed", 8, 44)
         display.show()
     raise Exception("WiFi connect failed")
 
