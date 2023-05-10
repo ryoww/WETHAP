@@ -105,7 +105,7 @@ while True:
             if is_display:
                 display.fill(0)
                 display.text("time update", 20, 24)
-                display.text("faild", 44, 32)
+                display.text("failed", 44, 32)
                 display.show()
         else:
             t0 = machine.RTC().datetime()
