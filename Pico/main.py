@@ -14,9 +14,9 @@ led.off()
 
 # ssd1306初期化
 try:
-    disp_i2c = I2C(1, sda=Pin(18), scl=Pin(19))
+    display_i2c = I2C(1, sda=Pin(18), scl=Pin(19))
     time.sleep_ms(100)
-    display = ssd1306.SSD1306_I2C(128, 64, disp_i2c)
+    display = ssd1306.SSD1306_I2C(128, 64, display_i2c)
 except:
     is_display = False
 else:
@@ -25,8 +25,8 @@ else:
 if is_display:
     display.fill(0)
     display.text("WETHAP", 40, 0)
-    display.text("Hello World!", 17, 33)
     display.hline(0, 10, 128, 1)
+    display.text("Hello World!", 17, 33)
     display.rect(5, 20, 118, 35, 1)
     display.show()
 
@@ -81,27 +81,30 @@ for i in range(max_wait):
 else:
     print("offline")
     if is_display:
-        display.text("connect faild", 12, 44)
+        display.text("connect failed", 12, 44)
         display.show()
-    raise Exception("WiFi could't connect")
+    raise Exception("WiFi connect failed")
 
 rtc = machine.RTC()
 timZone = 9
 ntptime.host = "ntp.nict.jp"
-# 起動時初期化完了フラグ
+# 起動時初期化フラグ
 is_init = False
 
 # ポストフラグ
 is_post = False
+# 時間更新フラグ
+is_time = False
 
 while True:
     t0 = machine.RTC().datetime()
 
     # 内部時計更新
-    if not is_init or (t0[5] == 0 and t0[6] == 0):
+    if not is_init or (t0[5] == 0 and not is_time):
         try:
             ntptime.settime()
         except:
+            print("failed to update real-time clock")
             if is_display:
                 display.fill(0)
                 display.text("time update", 20, 24)
@@ -109,15 +112,20 @@ while True:
                 display.show()
         else:
             t0 = machine.RTC().datetime()
-            is_init = True
-            print("initialize complete")
+            is_time = True
+            if not is_init:
+                is_init = True
+                print("initialize complete")
+            print("real-time clock updated")
             if is_display:
                 display.fill(0)
                 display.text("time update", 20, 24)
-                display.text("succeed", 36, 32)
+                display.text("success", 36, 32)
                 display.show()
+    if t0[5] != 0 and is_time:
+        is_time = False
 
-    # セットアップ完了で点灯
+    # 起動時初期化完了で点灯
     if is_init:
         led.on()
 
@@ -138,7 +146,6 @@ while True:
         display.fill(0)
         display.show()
         display.text(f"{t0[0]}-{t0[1]:02d}-{day:02d}", 24, 0)
-        time_disp = f"{hour:02d}:{t0[5]:02d}:{t0[6]:02d}"
         display.text(f"{hour:02d}:{t0[5]:02d}:{t0[6]:02d}", 32, 10)
         display.hline(0, 20, 128, 1)
         display.text(f"Temp:{bme.temperature:.3g}C", 24, 22)
@@ -173,7 +180,7 @@ while True:
         if is_display:
             if response.status_code == 200:
                 display.fill(0)
-                display.text("post:succeed", 8, 0)
+                display.text("post:success", 16, 0)
                 display.hline(0, 9, 128, 1)
                 display.text(f'date:{data["date"]}', 4, 11)
                 display.text(f'numGen:{data["numGen"]}', (72-len(str(data["numGen"]))*8)//2, 22)
