@@ -14,7 +14,9 @@ led.off()
 
 # ssd1306初期化
 try:
-    display = ssd1306.SSD1306_I2C(128, 64, I2C(1, sda=Pin(18), scl=Pin(19)))
+    disp_i2c = I2C(1, sda=Pin(18), scl=Pin(19))
+    time.sleep_ms(100)
+    display = ssd1306.SSD1306_I2C(128, 64, disp_i2c)
 except:
     is_display = False
     loop_time = 3
@@ -38,7 +40,9 @@ if is_display:
 
 # bme680初期化
 try:
-    bme = BME680_I2C(I2C(0, scl=Pin(1), sda=Pin(0)))
+    bme_i2c = I2C(0, sda=Pin(0), scl=Pin(1))
+    time.sleep_ms(100)
+    bme = BME680_I2C(bme_i2c)
 except Exception as err:
     if is_display:
         display.text("bme680 error", 16, 11)
