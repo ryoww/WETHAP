@@ -9,6 +9,22 @@ import ntptime
 import ssd1306
 
 
+def update_time(rtc, url):
+    response = urequests.get(url)
+
+    if response.status_code == 200:
+        data = response.json()
+        ymd, time = data["utc_datetime"].split("T")
+        year, month, day = list(map(int, ymd.split("-")))
+        hour, minute, seconds = time.split("+")[0].split(":")
+        second, second_sub = list(map(int, seconds.split(".")))
+        week = data["day_of_week"]
+
+        rtc.datetime((year, month, day, week, int(hour), int(minute), second, second_sub))
+        return True
+    else:
+        return False
+
 led = machine.Pin("LED", machine.Pin.OUT)
 led.off()
 
@@ -55,6 +71,7 @@ else:
 # 定数定義
 lab_id = "テストT"
 url = "https://adelppi.duckdns.org/addInfo"
+time_url = "https://worldtimeapi.org/api/ip"
 finish_time = ("09:25","10:10", "11:10", "11:55", "13:30", "14:15", "15:15", "16:00", "17:00", "17:45", "18:45", "19:30")
 
 ssid = "************"
@@ -75,7 +92,7 @@ for i in range(max_wait):
     if wlan.isconnected():
         print("online")
         if is_display:
-            display.text("wifi connect", 16, 44)
+            display.text("wifi connect", 14, 44)
             display.show()
         break
 else:
@@ -86,7 +103,7 @@ else:
     raise Exception("WiFi connect failed")
 
 rtc = machine.RTC()
-timZone = 9
+timeZone = 9
 ntptime.host = "ntp.nict.jp"
 # 起動時初期化フラグ
 is_init = False
@@ -97,26 +114,41 @@ is_post = False
 is_time = False
 
 while True:
-    t0 = machine.RTC().datetime()
+    t0 = rtc.datetime()
 
     # 内部時計更新
     if not is_init or (t0[5] == 0 and not is_time):
         try:
             ntptime.settime()
         except:
-            print("failed to update real-time clock")
-            if is_display:
-                display.fill(0)
-                display.text("time update", 20, 24)
-                display.text("failed", 44, 32)
-                display.show()
+            print("clock update by NTP failed")
+            if update_time(rtc, time_url):
+                t0 = rtc.datetime()
+                is_time = True
+                if not is_init:
+                    is_init = True
+                    print("initialize complete")
+                print("clock update by API success")
+                if is_display:
+                    display.fill(0)
+                    display.text("time update", 20, 24)
+                    display.text("success", 36, 32)
+                    display.show()
+            else:
+                print("clock update by API failed")
+                if is_display:
+                    display.fill(0)
+                    display.text("time update", 20, 24)
+                    display.text("failed", 44, 32)
+                    display.show()
         else:
-            t0 = machine.RTC().datetime()
+            t0 = rtc.datetime()
             is_time = True
             if not is_init:
                 is_init = True
                 print("initialize complete")
-            print("real-time clock updated")
+            print("clock update by NTP success")
+            print(t0)
             if is_display:
                 display.fill(0)
                 display.text("time update", 20, 24)
@@ -129,7 +161,7 @@ while True:
     if is_init:
         led.on()
 
-    hour = t0[4] + timZone
+    hour = t0[4] + timeZone
     day = t0[2]
 
     if hour >= 24:
@@ -180,7 +212,7 @@ while True:
         if is_display:
             if response.status_code == 200:
                 display.fill(0)
-                display.text("post:success", 16, 0)
+                display.text("post success", 16, 0)
                 display.hline(0, 9, 128, 1)
                 display.text(f'date:{data["date"]}', 4, 11)
                 display.text(f'numGen:{data["numGen"]}', (72-len(str(data["numGen"]))*8)//2, 22)
@@ -201,3 +233,4 @@ while True:
         is_post = False
 
     time.sleep(1)
+
