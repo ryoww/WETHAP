@@ -204,7 +204,7 @@ while True:
     t0 = rtc.datetime()
 
     # 内部時計更新
-    if not is_init or (t0[5] == 0 and not is_time):
+    if (not is_init or (t0[5] == 0 and not is_time)) and is_online:
         try:
             ntptime.settime()
         except:
