@@ -1,29 +1,42 @@
 <script>
 import MenuBar from '../components/MenuBar.vue'
+import PageLoader from '../components/PageLoader.vue';
 export default {
     components: {
-        MenuBar
+        MenuBar,
+        PageLoader
+    },
+    data() {
+        return {
+            isLoading: true
+        }
+    },
+    mounted() {
+        setTimeout(() => {
+            this.isLoading = false
+        }, 1000)
     }
 }
 </script>
 
 <template>
-    <div class="background">
-        <MenuBar />
-        <main>
-            <h1>WETHAP</h1>
-            <!-- <h2>かっこいいキャッチコピー</h2>
-            <p>かっこいい説明文</p> -->
-            <h2>Elevate your lab experience with WETHAP.</h2>
-            <p>Soreppoi koto kaite mita. Demo jitsu ha tadano administrator gamen ni naru yotei.</p>
-            <div class="link">
-                <RouterLink to="/api">
-                    <span class="largeButton">
-                        Try API
-                    </span>
-                </RouterLink>
-            </div>
-        </main>
+    <PageLoader v-if="isLoading" />
+    <div v-else>
+        <div class="background">
+            <MenuBar />
+            <main>
+                <h1>WETHAP</h1>
+                <h2>Elevate your lab experience with WETHAP.</h2>
+                <p>Soreppoi koto kaite mita. Demo jitsu ha tadano administrator gamen ni naru yotei.</p>
+                <div class="link">
+                    <RouterLink to="/api">
+                        <span class="largeButton">
+                            Try API
+                        </span>
+                    </RouterLink>
+                </div>
+            </main>
+        </div>
     </div>
 </template>
 
