@@ -99,7 +99,10 @@ def update_time(rtc, url):
         rtc (RTC): RTCオブジェクト
         url (str): 現在時間取得用APIのURL
     """
-    response = urequests.get(url)
+    try:
+        response = urequests.get(url)
+    except:
+        return False
 
     if response.status_code == 200:
         data = response.json()
@@ -140,7 +143,7 @@ else:
     display.add_text("bme680 connect").show(False)
 
 # 定数定義
-lab_id = "T4教室"
+lab_id = "設楽研"
 url = "https://adelppi.duckdns.org/addInfo"
 time_url = "https://worldtimeapi.org/api/ip"
 finish_time = ("09:25", "10:10", "10:22", "11:10", "11:55", "13:30", "14:15", "15:15", "16:00", "17:00", "17:45", "18:45", "19:30")
@@ -274,21 +277,24 @@ while True:
         }
 
         led.off()
-        response = urequests.post(url, data=json.dumps(data).encode("unicode_escape"), headers={"Content-Type": "application/json"})
-
-        print(data["labID"])
-        print(response.status_code)
-        print(response.content)
-
-        if response.status_code == 200:
-            display.add_text("post:success", new=True).line()
-            display.add_text(f'date:{data["date"]}')
-            display.add_text(f'numGen:{data["numGen"]}')
-            display.add_text(f'Temp:{data["temperature"]}C')
-            display.add_text(f'Hmd.:{data["humidity"]}%')
-            display.add_text(f'Pres.:{data["pressure"]}hPa').show()
+        try:
+            response = urequests.post(url, data=json.dumps(data).encode("unicode_escape"), headers={"Content-Type": "application/json"})
+        except:
+            display.multi_text("post failed")
         else:
-            display.multi_text("post failed", f"with {response.status_code}")
+            print(data["labID"])
+            print(response.status_code)
+            print(response.content)
+
+            if response.status_code == 200:
+                display.add_text("post:success", new=True).line()
+                display.add_text(f'date:{data["date"]}')
+                display.add_text(f'numGen:{data["numGen"]}')
+                display.add_text(f'Temp:{data["temperature"]}C')
+                display.add_text(f'Hmd.:{data["humidity"]}%')
+                display.add_text(f'Pres.:{data["pressure"]}hPa').show()
+            else:
+                display.multi_text("post failed", f"with {response.status_code}")
 
         time.sleep(1)
         led.on()
