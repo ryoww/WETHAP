@@ -43,6 +43,12 @@ class DBCommands:
         else:
             return False
 
+    def registeredRooms(self):
+        self.cursor.execute(f"SELECT DISTINCT labID FROM infos")
+        
+        response = self.cursor.fetchall()
+        rooms = [i[0] for i in response]
+        return rooms
 
     def select(
         self,
@@ -68,8 +74,11 @@ if __name__ == "__main__":
     # WETHAP用のDBテーブルのテンプレートを作る
     db.createDB()
 
-    # 登録されている研究室か
+    # 登録されている研究室か(Boolean)
     print(db.isRegistered("テスト研究室"))
+    
+    # 登録されている研究室一覧を配列で取得
+    print(db.registeredRooms())
 
     # データを挿入する
     db.insert(

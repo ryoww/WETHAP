@@ -26,7 +26,7 @@ def addInfo():
         pressure = data["pressure"],
         weather = fetchWeather())
     db.close()
-
+    print(request)
     return "added"
 
 
@@ -39,6 +39,13 @@ def isRegistered():
 
     return str(isRegistered)
 
+@app.route("/registeredRooms/", methods = ["GET"])
+def registeredRooms():
+    db = DBCommands(DB_PATH = "./data.db")
+    data = db.registeredRooms()
+    db.close()
+
+    return data
 
 @app.route("/previewData/", methods = ["GET"])
 def previewData():
