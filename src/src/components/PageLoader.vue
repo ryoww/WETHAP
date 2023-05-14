@@ -2,7 +2,7 @@
     <div class="loader">
         <div class="loadingItem">
             <!-- <img src="../assets/3Dlogo3.gif" width="250"> -->
-            <img src="../assets/logo.png" width="250">
+            <img src="../assets/logo.png" width="150">
         </div>
     </div>
 </template>
@@ -10,8 +10,8 @@
 <style scoped>
 .loader {
     position: fixed;
-    top: 0; /* !?!?!? */
-    left: 0; /* これすごいかも */
+    top: 0;/* !?!?!? */
+    left: 0;/* これすごいかも */
     width: 100%;
     height: 100%;
     justify-content: center;
@@ -24,5 +24,5 @@
     position: absolute;
     top: 50%;
     left: 50%;
-}
-</style>
+    transform: translateX(-50%) translateY(-50%);
+}</style>

@@ -12,9 +12,21 @@ export default {
         }
     },
     mounted() {
-        setTimeout(() => {
-            this.isLoading = false
-        }, 3000)
+        // setTimeout(() => {
+        //     this.isLoading = false
+        // }, 3000)
+    },
+    created() {
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', 'https://ryoww.github.io/WETHAP/');
+        xhr.onreadystatechange = () => {
+            if (xhr.readyState === 4) {
+                this.isLoading = false;
+            } else {
+                this.isLoading = true;
+            }
+        };
+        xhr.send();
     }
 }
 </script>
