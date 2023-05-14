@@ -18,7 +18,7 @@ export default {
     },
     created() {
         const xhr = new XMLHttpRequest();
-        xhr.open('GET', 'https://ryoww.github.io/WETHAP/');
+        xhr.open('GET', '/');
         xhr.onreadystatechange = () => {
             if (xhr.readyState === 4) {
                 this.isLoading = false;
