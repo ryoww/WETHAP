@@ -121,9 +121,9 @@ def update_time(rtc, url):
 led = machine.Pin("LED", machine.Pin.OUT)
 led.off()
 
+i2c = I2C(1, sda=Pin(14), scl=Pin(15))
 # ssd1306初期化
-display_i2c = I2C(1, sda=Pin(18), scl=Pin(19))
-display = DisplayManager(display_i2c)
+display = DisplayManager(i2c)
 display.add_text("WETHAP", new=True).line()
 if display.display:
     display.display.rect(5, 20, 118, 35, 1)
@@ -134,8 +134,7 @@ display.add_text("booting...", new=True).line().show(False)
 
 # bme680初期化
 try:
-    bme_i2c = I2C(0, sda=Pin(0), scl=Pin(1))
-    bme = BME680_I2C(bme_i2c)
+    bme = BME680_I2C(i2c)
 except Exception as error:
     display.multi_text("bme680 error")
     raise error
@@ -147,6 +146,7 @@ lab_id = "設楽研"
 url = "https://adelppi.duckdns.org/addInfo"
 time_url = "https://worldtimeapi.org/api/ip"
 finish_time = ("09:25", "10:10", "10:22", "11:10", "11:55", "13:30", "14:15", "15:15", "16:00", "17:00", "17:45", "18:45", "19:30")
+test_time = ("00:00", "08:00", "21:00")
 
 ssid = "************"
 password = "********"
@@ -271,15 +271,16 @@ while True:
             "labID": lab_id,
             "date": f"{t0[0]}-{t0[1]:02d}-{day:02d}",
             "numGen": int(finish_time.index(nowtime)) + 1,
-            "temperature": f"{bme.temperature:.2f}",
-            "humidity": f"{bme.humidity:.3f}",
-            "pressure": f"{bme.pressure:.2f}",
+            "temperature": f"{bme.temperature:.2g}",
+            "humidity": f"{bme.humidity:.3g}",
+            "pressure": f"{bme.pressure:.2g}",
         }
 
         led.off()
         try:
             response = urequests.post(url, data=json.dumps(data).encode("unicode_escape"), headers={"Content-Type": "application/json"})
         except:
+            print("post failed")
             display.multi_text("post failed")
         else:
             print(data["labID"])
@@ -302,4 +303,39 @@ while True:
     if is_post and nowtime not in finish_time:
         is_post = False
 
+    if is_init and is_online and nowtime in test_time and not is_post:
+        is_post = True
+        data = {
+            "labID": lab_id,
+            "date": f"{t0[0]}-{t0[1]:02d}-{day:02d}",
+            "numGen": int(test_time.index(nowtime)) + 20,
+            "temperature": f"{bme.temperature:.2g}",
+            "humidity": f"{bme.humidity:.3g}",
+            "pressure": f"{bme.pressure:.2g}",
+        }
+
+        led.off()
+        try:
+            response = urequests.post(url, data=json.dumps(data).encode("unicode_escape"), headers={"Content-Type": "application/json"})
+        except:
+            print("post failed")
+            display.multi_text("post failed")
+        else:
+            print(data["labID"])
+            print(response.status_code)
+            print(response.content)
+
+            if response.status_code == 200:
+                display.add_text("test:success", new=True).line()
+                display.add_text(f'date:{data["date"]}')
+                display.add_text(f'numGen:{data["numGen"]}')
+                display.add_text(f'Temp:{data["temperature"]}C')
+                display.add_text(f'Hmd.:{data["humidity"]}%')
+                display.add_text(f'Pres.:{data["pressure"]}hPa').show()
+            else:
+                display.multi_text("post failed", f"with {response.status_code}")
+        time.sleep(1)
+        led.on()
+    if is_post and nowtime not in test_time:
+        is_post = False
     time.sleep(1)
