@@ -17,6 +17,7 @@ export default {
                 weather: ''
             },
             items: [],
+            rooms: [],
             sortBy: 1,
             ascending: false,
             exportString: '場所, 日付, 時限, 気温, 湿度, 気圧, 天気\n'
@@ -67,6 +68,22 @@ export default {
             axios.get('https://adelppi.duckdns.org/previewData')
                 .then(response => {
                     this.items = response.data;
+                    this.isLoading = false
+                })
+                .catch(error => {
+                    console.log(error);
+                });
+            axios.get('http://192.168.3.2/registeredRooms')
+                .then(response => {
+                    this.rooms = response.data;
+                    this.isLoading = false
+                })
+                .catch(error => {
+                    console.log(error);
+                });
+            axios.get('https://adelppi.duckdns.org/registeredRooms')
+                .then(response => {
+                    this.rooms = response.data;
                     this.isLoading = false
                 })
                 .catch(error => {
@@ -129,7 +146,10 @@ export default {
             <div class="right-column">
                 <h2>条件</h2>
                 <div>
-                    場所: <br><input type="text" v-model="searchFilter.location">
+                    場所: <br><input type="text" v-model="searchFilter.location" list="rooms">
+                    <datalist id="rooms">
+                        <option v-for="room in rooms">{{ room }}</option>
+                    </datalist>
                 </div>
                 <div>
                     日付: <br><input type="date" v-model="searchFilter.date">
