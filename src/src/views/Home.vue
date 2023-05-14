@@ -11,12 +11,10 @@ export default {
             isLoading: true
         }
     },
-    mounted() {
+    created() {
         // setTimeout(() => {
         //     this.isLoading = false
-        // }, 3000)
-    },
-    created() {
+        // }, 1500)
         const xhr = new XMLHttpRequest();
         xhr.open('GET', '/');
         xhr.onreadystatechange = () => {

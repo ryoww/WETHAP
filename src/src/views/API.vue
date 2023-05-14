@@ -1,12 +1,15 @@
 <script>
 import axios from 'axios';
 import MenuBar from '../components/MenuBar.vue'
+import PageLoader from '../components/PageLoader.vue';
 export default {
     components: {
-        MenuBar
+        MenuBar,
+        PageLoader
     },
     data() {
         return {
+            isLoading: true,
             searchFilter: {
                 location: '',
                 date: '',
@@ -56,6 +59,7 @@ export default {
             axios.get('http://192.168.3.2/previewData')
                 .then(response => {
                     this.items = response.data;
+                    this.isLoading = false
                 })
                 .catch(error => {
                     console.log(error);
@@ -63,6 +67,7 @@ export default {
             axios.get('https://adelppi.duckdns.org/previewData')
                 .then(response => {
                     this.items = response.data;
+                    this.isLoading = false
                 })
                 .catch(error => {
                     console.log(error);
@@ -87,10 +92,8 @@ export default {
             URL.revokeObjectURL(url);
         }
     },
-    created() {
+    mounted() {
         this.fetchAllData()
-    },
-    watch: {
     }
 }
 </script>
@@ -99,7 +102,10 @@ export default {
     <MenuBar />
     <main>
         <h1>全データから検索する</h1>
-        <div class="container">
+        <div v-if="isLoading">
+            <h2>取得中...</h2>
+        </div>
+        <div class="container" v-else>
             <div class="left-column">
                 <table>
                     <thead>
