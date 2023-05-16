@@ -1,12 +1,12 @@
-from bme680 import *
-from machine import I2C, Pin
-import time
-import urequests
-import network
 import json
-import machine
+import time
+
+import network
 import ntptime
 import ssd1306
+import urequests
+from bme680 import BME680_I2C
+from machine import I2C, RTC, Pin
 
 
 class DisplayManager:
@@ -14,13 +14,17 @@ class DisplayManager:
     Args:
         i2c (I2C): I2Cオブジェクト
         margin (int, optional): 文字間のマージン量
+        width (int, optional): ssd1306デバイスの横ピクセル数
+        height (int, optional): ssd1306デバイスの縦ピクセル数
     """
-    def __init__(self, i2c, margin=3):
+    def __init__(self, i2c, margin=3, width=128, height=64):
         self.grid = 8
+        self.width = width
+        self.height = height
         self.margin = margin
         self.current = 0
         try:
-            self.display = ssd1306.SSD1306_I2C(128, 64, i2c)
+            self.display = ssd1306.SSD1306_I2C(self.width, self.height, i2c)
         except:
             self.display = None
             print("ssd1306 not connect")
@@ -28,8 +32,7 @@ class DisplayManager:
             print("ssd1306 connected")
 
     def clear(self):
-        """無表示化
-        """
+        """無表示化"""
         if self.display:
             self.current = 0
             self.display.fill(0)
@@ -48,7 +51,7 @@ class DisplayManager:
                 self.display.fill(0)
                 self.current = 0
             write = row if row else self.current
-            self.display.text(text, (128-len(text)*self.grid)//2, write*(self.grid+self.margin))
+            self.display.text(text, (self.width - len(text) * self.grid) // 2, write * (self.grid + self.margin))
             self.current = write + 1
         return self
 
@@ -64,9 +67,9 @@ class DisplayManager:
                 print(self.current)
                 [self.add_text(text) for text in texts]
             else:
-                char = self.grid+self.margin
-                pos = ((64+char)-char*len(texts))//2
-                [self.display.text(text, (128-len(text)*self.grid)//2, pos+char*i) for i, text in enumerate(texts)]
+                char = self.grid + self.margin
+                pos = ((self.height + char) - char * len(texts)) // 2
+                [self.display.text(text, (self.width - len(text) * self.grid) // 2, pos + char * i) for i, text in enumerate(texts)]
             self.display.show()
             self.current = 0
         return self
@@ -78,7 +81,7 @@ class DisplayManager:
         """
         if self.display:
             write = row if row else self.current - 1
-            self.display.hline(0, (write+1)*(self.grid+self.margin//2), 128, 1)
+            self.display.hline(0, (write + 1) * (self.grid + self.margin // 2), self.width, 1)
         return self
 
     def show(self, new=True):
@@ -118,7 +121,7 @@ def update_time(rtc, url):
         return False
 
 
-led = machine.Pin("LED", machine.Pin.OUT)
+led = Pin("LED", Pin.OUT)
 led.off()
 
 i2c = I2C(1, sda=Pin(14), scl=Pin(15))
@@ -136,20 +139,23 @@ display.add_text("booting...", new=True).line().show(False)
 try:
     bme = BME680_I2C(i2c)
 except Exception as error:
+    print("bme680 error")
     display.multi_text("bme680 error")
     raise error
 else:
+    print("bme680 connect")
     display.add_text("bme680 connect").show(False)
 
 # 定数定義
-lab_id = "設楽研"
-url = "https://adelppi.duckdns.org/addInfo"
-time_url = "https://worldtimeapi.org/api/ip"
-finish_time = ("09:25", "10:10", "10:22", "11:10", "11:55", "13:30", "14:15", "15:15", "16:00", "17:00", "17:45", "18:45", "19:30")
-test_time = ("00:00", "08:00", "21:00")
+LAB_ID = "設楽研"
+URL = "https://adelppi.duckdns.org/addInfo"
+TIME_URL = "https://worldtimeapi.org/api/ip"
+NTP_URL = "ntp.nict.jp"
+FINISH_TIME = ("09:25", "10:10", "10:22", "11:10", "11:55", "13:30", "14:15", "15:15", "16:00", "17:00", "17:45", "18:45", "19:30")
+DEBUG_TIME = ("21:00", "00:00", "08:00")
 
-ssid = "************"
-password = "********"
+SSID = "************"
+PASSWORD = "********"
 
 # 起動時初期化フラグ
 is_init = False
@@ -163,7 +169,7 @@ is_time = False
 # wifi初期化
 wlan = network.WLAN(network.STA_IF)
 wlan.active(True)
-wlan.connect(ssid, password)
+wlan.connect(SSID, PASSWORD)
 display.add_text("wifi activate")
 display.add_text("connecting...").show(False)
 # wifi接続待機
@@ -177,12 +183,12 @@ for i in range(max_wait):
         break
 else:
     print("offline")
-    display.multi_text("connect failed")
+    display.multi_text("wifi connect", "failed")
     raise Exception("WiFi connect failed")
 
-rtc = machine.RTC()
+rtc = RTC()
 timeZone = 9
-ntptime.host = "ntp.nict.jp"
+ntptime.host = NTP_URL
 
 while True:
     # WiFi再接続
@@ -191,7 +197,7 @@ while True:
         is_online = False
         print("offline detect")
         display.multi_text("offline detect")
-        wlan.connect(ssid, password)
+        wlan.connect(SSID, PASSWORD)
         for i in range(max_wait):
             time.sleep(1)
             if wlan.isconnected():
@@ -202,7 +208,7 @@ while True:
                 break
         else:
             print("offline")
-            display.multi_text("reconnect failed")
+            display.multi_text("wifi reconnect", "failed")
 
     t0 = rtc.datetime()
 
@@ -212,7 +218,7 @@ while True:
             ntptime.settime()
         except:
             print("clock update by NTP failed")
-            if update_time(rtc, time_url):
+            if update_time(rtc, TIME_URL):
                 t0 = rtc.datetime()
                 is_time = True
                 if not is_init:
@@ -265,12 +271,12 @@ while True:
     sec = t0[6]
     # print(sec)
 
-    if is_init and is_online and nowtime in finish_time and not is_post:
+    if is_init and is_online and nowtime in FINISH_TIME and not is_post:
         is_post = True
         data = {
-            "labID": lab_id,
+            "labID": LAB_ID,
             "date": f"{t0[0]}-{t0[1]:02d}-{day:02d}",
-            "numGen": int(finish_time.index(nowtime)) + 1,
+            "numGen": int(FINISH_TIME.index(nowtime)) + 1,
             "temperature": f"{bme.temperature:.2g}",
             "humidity": f"{bme.humidity:.3g}",
             "pressure": f"{bme.pressure:.2g}",
@@ -278,7 +284,7 @@ while True:
 
         led.off()
         try:
-            response = urequests.post(url, data=json.dumps(data).encode("unicode_escape"), headers={"Content-Type": "application/json"})
+            response = urequests.post(URL, data=json.dumps(data).encode("unicode_escape"), headers={"Content-Type": "application/json"})
         except:
             print("post failed")
             display.multi_text("post failed")
@@ -300,15 +306,15 @@ while True:
         time.sleep(1)
         led.on()
 
-    if is_post and nowtime not in finish_time:
-        is_post = False
+#     if is_post and nowtime not in FINISH_TIME:
+#         is_post = False
 
-    if is_init and is_online and nowtime in test_time and not is_post:
+    if is_init and is_online and nowtime in DEBUG_TIME and not is_post:
         is_post = True
         data = {
-            "labID": lab_id,
+            "labID": LAB_ID,
             "date": f"{t0[0]}-{t0[1]:02d}-{day:02d}",
-            "numGen": int(test_time.index(nowtime)) + 20,
+            "numGen": int(DEBUG_TIME.index(nowtime)) + 20,
             "temperature": f"{bme.temperature:.2g}",
             "humidity": f"{bme.humidity:.3g}",
             "pressure": f"{bme.pressure:.2g}",
@@ -316,7 +322,7 @@ while True:
 
         led.off()
         try:
-            response = urequests.post(url, data=json.dumps(data).encode("unicode_escape"), headers={"Content-Type": "application/json"})
+            response = urequests.post(URL, data=json.dumps(data).encode("unicode_escape"), headers={"Content-Type": "application/json"})
         except:
             print("post failed")
             display.multi_text("post failed")
@@ -336,6 +342,6 @@ while True:
                 display.multi_text("post failed", f"with {response.status_code}")
         time.sleep(1)
         led.on()
-    if is_post and nowtime not in test_time:
+    if is_post and nowtime not in DEBUG_TIME and nowtime not in FINISH_TIME:
         is_post = False
     time.sleep(1)
