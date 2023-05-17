@@ -281,4 +281,50 @@ td {
     padding: 10px;
     border-bottom: solid 1px #748ca5;
 }
+
+@media screen and (max-width: 450px) {
+    h1 {
+        font-size: 25px;
+    }
+
+    h2 {
+        font-size: 20px;
+    }
+
+    .container {
+        /* display: flex; */
+        flex-direction: column-reverse;
+    }
+
+    input {
+        width: 75%;
+        height: 1.5em;
+        /* text-align: center; */
+        margin-bottom: 2.5%;
+        padding: 5px 10px;
+        border-radius: 8px;
+        border: 2.5px solid transparent;
+        border-color: rgb(255, 255, 255);
+        font-size: 20px;
+        font-family: Arial, Helvetica, sans-serif;
+        background-color: #e1e1e1;
+        transition: 0.5s;
+    }
+
+    table {
+        width: 90%;
+        text-align: center;
+        font-size: 10px;
+        border-collapse: collapse;
+    }
+
+    tr:nth-child(even) {
+        background: #162d5c;
+    }
+
+    td {
+        padding: 10px;
+        border-bottom: solid 1px #748ca5;
+    }
+}
 </style>
