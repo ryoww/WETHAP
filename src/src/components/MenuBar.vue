@@ -57,8 +57,6 @@ nav {
     text-align: center;
     text-decoration: none;
     color: #ffffff;
-    font-size: 100%;
-    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
     margin-right: 50%;
     vertical-align: middle;
     transition: 0.25s;
@@ -76,20 +74,20 @@ nav {
     img {
         width: 100px;
     }
-
+    
     nav {
         height: auto;
     }
 
     .tryButton {
-        height: 50px;
+        /* height: 50px; */
         padding: 3px 7px;
         color: rgb(255, 255, 255);
-        margin-top: 10px;
+        /* margin-top: 10px; */
         border-radius: 5px;
         border: 1px solid transparent;
         border-color: #ffffff;
-        font-size: 45%;
+        font-size: 10px;
         font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
         cursor: pointer;
         transition: 0.25s;
@@ -99,9 +97,9 @@ nav {
         text-align: center;
         text-decoration: none;
         color: #ffffff;
-        font-size: 45%;
+        font-size: 60%;
         font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
-        margin-right: 10%;
+        margin-right: 12%;
         vertical-align: middle;
         transition: 0.25s;
     }
