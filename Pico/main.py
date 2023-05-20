@@ -46,11 +46,10 @@ TIMEZONE: int = 9
 SSID: str = "************"
 PASSWORD: str = "********"
 
-i2c = I2C(1, sda=Pin(14), scl=Pin(15))
+i2c = I2C(1, sda=Pin(14, pull=Pin.PULL_UP), scl=Pin(15, pull=Pin.PULL_UP))
 dht = Pin(13, Pin.IN, Pin.PULL_UP)
 
-led = Pin("LED", Pin.OUT)
-led.off()
+led = Pin("LED", Pin.OUT, value=False)
 
 # ssd1306初期化
 display = DisplayManager(i2c)
