@@ -35,10 +35,23 @@ def update_time(rtc, url):
         return False
 
 
+# 定数定義
+LAB_ID = "T4教室"
+URL = "https://adelppi.duckdns.org/addInfo"
+TIME_URL = "https://worldtimeapi.org/api/ip"
+NTP_URL = "ntp.nict.jp"
+FINISH_TIME = ("09:25", "10:10", "11:10", "11:55", "13:30", "14:15", "15:15", "16:00", "17:00", "17:45", "18:45", "19:30")
+DEBUG_TIME = ("21:00", "00:00", "08:00")
+
+SSID = "************"
+PASSWORD = "********"
+
+i2c = I2C(1, sda=Pin(14), scl=Pin(15))
+dht = Pin(13, Pin.IN, Pin.PULL_UP)
+
 led = Pin("LED", Pin.OUT)
 led.off()
 
-i2c = I2C(1, sda=Pin(14), scl=Pin(15))
 # ssd1306初期化
 display = DisplayManager(i2c)
 display.add_text("WETHAP", new=True).line()
@@ -49,27 +62,23 @@ display.add_text("Hello World!", 3).show()
 time.sleep(1)
 display.add_text("booting...", new=True).line().show(False)
 
-# bme680初期化
+# センサー初期化
 try:
-    bme = BME680_I2C(i2c)
-except Exception as error:
+    collector = EnvCollector(i2c)
+except:
     print("bme680 error")
-    display.multi_text("bme680 error")
-    raise error
+    try:
+        collector = EnvCollector(dht)
+    except:
+        print("dht11 error")
+        display.multi_text("no sensor detect")
+        raise Exception("No sensor detect")
+    else:
+        print("dht11 connect")
+        display.add_text("dht11 connect").show(False)
 else:
     print("bme680 connect")
     display.add_text("bme680 connect").show(False)
-
-# 定数定義
-LAB_ID = "設楽研"
-URL = "https://adelppi.duckdns.org/addInfo"
-TIME_URL = "https://worldtimeapi.org/api/ip"
-NTP_URL = "ntp.nict.jp"
-FINISH_TIME = ("09:25", "10:10", "11:10", "11:55", "13:30", "14:15", "15:15", "16:00", "17:00", "17:45", "18:45", "19:30")
-DEBUG_TIME = ("21:00", "00:00", "08:00")
-
-SSID = "************"
-PASSWORD = "********"
 
 # 起動時初期化フラグ
 is_init = False
@@ -167,36 +176,38 @@ try:
             hour -= 24
             day += 1
 
+        envs = collector.get_env()
         print(t0)
-        print(f"Temp:{bme.temperature:.3f}C, Humidity:{bme.humidity:.3f}%, Pressure:{bme.pressure:.5g}hPa, Gas:{bme.gas}")
+        print(f'Temp:{envs["temperature"]:.3f}C, Humidity:{envs["humidity"]:.3f}%, Pressure:{envs["pressure"]:.5g}hPa, Gas:{envs["gas"]}')
         print(f"{t0[0]}-{t0[1]}-{day} {hour}:{t0[5]}:{t0[6]}")
 
         # 取得データ表示
         # NOTE: ループ時間増加
         display.clear()
+        time.sleep_ms(100)
         display.add_text(f"{t0[0]}-{t0[1]:02d}-{day:02d}", new=True)
         display.add_text(f"{hour:02d}:{t0[5]:02d}:{t0[6]:02d}").line()
-        display.add_text(f"Temp:{bme.temperature:.3f}C")
-        display.add_text(f"Hmd.:{bme.humidity:.3f}%")
-        display.add_text(f"Pres.:{bme.pressure:.5g}hPa")
-        display.add_text(f"Gas:{bme.gas}").show()
+        display.add_text(f'Temp:{envs["temperature"]:.3f}C')
+        display.add_text(f'Hmd.:{envs["humidity"]:.3f}%')
+        display.add_text(f'Pres.:{envs["pressure"]:.5g}hPa')
+        display.add_text(f'Gas:{envs["gas"]}').show()
 
         nowtime = f"{hour:02d}:{t0[5]:02d}"
 
         sec = t0[6]
-        # print(sec)
 
         if is_init and is_online and nowtime in FINISH_TIME and not is_post:
             data = {
                 "labID": LAB_ID,
                 "date": f"{t0[0]}-{t0[1]:02d}-{day:02d}",
                 "numGen": int(FINISH_TIME.index(nowtime)) + 1,
-                "temperature": f"{bme.temperature:.2f}",
-                "humidity": f"{bme.humidity:.3f}",
-                "pressure": f"{bme.pressure:.2f}",
+                "temperature": f'{envs["temperature"]:.2f}',
+                "humidity": f'{envs["humidity"]:.3f}',
+                "pressure": f'{envs["pressure"]:.2f}',
             }
 
             led.off()
+            display.multi_text("posting...")
             try:
                 response = urequests.post(URL, data=json.dumps(data).encode("unicode_escape"), headers={"Content-Type": "application/json"})
             except:
@@ -229,12 +240,13 @@ try:
                 "labID": LAB_ID,
                 "date": f"{t0[0]}-{t0[1]:02d}-{day:02d}",
                 "numGen": int(DEBUG_TIME.index(nowtime)) + 20,
-                "temperature": f"{bme.temperature:.2f}",
-                "humidity": f"{bme.humidity:.3f}",
-                "pressure": f"{bme.pressure:.2f}",
+                "temperature": f'{envs["temperature"]:.2f}',
+                "humidity": f'{envs["humidity"]:.3f}',
+                "pressure": f'{envs["pressure"]:.2f}',
             }
 
             led.off()
+            display.multi_text("posting...")
             try:
                 response = urequests.post(URL, data=json.dumps(data).encode("unicode_escape"), headers={"Content-Type": "application/json"})
             except:
@@ -262,4 +274,4 @@ try:
         time.sleep(1)
 except Exception as err:
     print(err)
-    display.multi_text(err)
+    display.split_text(err)

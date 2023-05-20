@@ -14,6 +14,7 @@ class DisplayManager:
         self.width = width
         self.height = height
         self.margin = margin
+        self.line_len = self.width // self.grid
         self.current = 0
         try:
             self.display = ssd1306.SSD1306_I2C(self.width, self.height, i2c)
@@ -65,6 +66,15 @@ class DisplayManager:
             self.display.show()
             self.current = 0
         return self
+
+    def split_text(self, text):
+        """行の表示限界を超える長さの文字列を分割して表示
+        Args:
+            text (str like): 表示するテキストを入力
+        """
+        if self.display:
+            text = str(text)
+            self.multi_text(*[text[i : i + self.line_len] for i in range(0, len(text), self.line_len)])
 
     def line(self, row=None):
         """現在の表示行の下に線を追加
