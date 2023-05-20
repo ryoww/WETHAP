@@ -1,4 +1,5 @@
 import ssd1306
+from machine import I2C
 
 
 class DisplayManager:
@@ -9,15 +10,18 @@ class DisplayManager:
         width (int, optional): ssd1306デバイスの横ピクセル数
         height (int, optional): ssd1306デバイスの縦ピクセル数
     """
-    def __init__(self, i2c, margin=3, width=128, height=64):
-        self.grid = 8
-        self.width = width
-        self.height = height
-        self.margin = margin
-        self.line_len = self.width // self.grid
-        self.current = 0
+
+    def __init__(self, i2c: I2C, margin: int = 3, width: int = 128, height: int = 64) -> None:
+        self.grid: int = 8
+        self.width: int = width
+        self.height: int = height
+        self.margin: int = margin
+        self.line_len: int = self.width // self.grid
+        self.current: int = 0
         try:
-            self.display = ssd1306.SSD1306_I2C(self.width, self.height, i2c)
+            self.display = ssd1306.SSD1306_I2C(
+                self.width, self.height, i2c
+            )
         except:
             self.display = None
             print("ssd1306 not connect")
@@ -32,7 +36,7 @@ class DisplayManager:
             self.display.show()
         return self
 
-    def add_text(self, text, row=None, new=False):
+    def add_text(self, text: str, row: int = None, new: bool = False):
         """表示行追加
         Args:
             text (str): 表示させるテキスト
@@ -48,7 +52,7 @@ class DisplayManager:
             self.current = write + 1
         return self
 
-    def multi_text(self, *texts):
+    def multi_text(self, *texts: list[str]):
         """複数行を中央揃えで表示
         Args:
             (str): 表示するテキストを入力 複数入力可
@@ -67,7 +71,7 @@ class DisplayManager:
             self.current = 0
         return self
 
-    def split_text(self, text):
+    def split_text(self, text: str):
         """行の表示限界を超える長さの文字列を分割して表示
         Args:
             text (str like): 表示するテキストを入力
@@ -75,8 +79,9 @@ class DisplayManager:
         if self.display:
             text = str(text)
             self.multi_text(*[text[i : i + self.line_len] for i in range(0, len(text), self.line_len)])
+        return self
 
-    def line(self, row=None):
+    def line(self, row: int = None):
         """現在の表示行の下に線を追加
         Args:
             row (int, optional): 表示行を指定 未指定で次の行に追加
@@ -86,7 +91,7 @@ class DisplayManager:
             self.display.hline(0, (write + 1) * (self.grid + self.margin // 2), self.width, 1)
         return self
 
-    def show(self, new=True):
+    def show(self, new: bool = True):
         """描画更新
         Args:
             new (bool, optional): Trueで描画後現在行を初期化 Falseで描画後現在行を初期化しない

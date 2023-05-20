@@ -10,7 +10,7 @@ from env_collector import EnvCollector
 from machine import I2C, RTC, Pin
 
 
-def update_time(rtc, url):
+def update_time(rtc: RTC, url: str) -> bool:
     """内部時計を更新
     Args:
         rtc (RTC): RTCオブジェクト
@@ -22,7 +22,7 @@ def update_time(rtc, url):
         return False
 
     if response.status_code == 200:
-        data = response.json()
+        data: dict[str, str] = response.json()
         ymd, time = data["utc_datetime"].split("T")
         year, month, day = list(map(int, ymd.split("-")))
         hour, minute, seconds = time.split("+")[0].split(":")
@@ -36,15 +36,15 @@ def update_time(rtc, url):
 
 
 # 定数定義
-LAB_ID = "T4教室"
-URL = "https://adelppi.duckdns.org/addInfo"
-TIME_URL = "https://worldtimeapi.org/api/ip"
-NTP_URL = "ntp.nict.jp"
-FINISH_TIME = ("09:25", "10:10", "11:10", "11:55", "13:30", "14:15", "15:15", "16:00", "17:00", "17:45", "18:45", "19:30")
-DEBUG_TIME = ("21:00", "00:00", "08:00")
+LAB_ID: str = "T4教室"
+URL: str = "https://adelppi.duckdns.org/addInfo"
+TIME_URL: str = "https://worldtimeapi.org/api/ip"
+NTP_URL: str = "ntp.nict.jp"
+FINISH_TIME: tuple[str] = ("09:25", "10:10", "11:10", "11:55", "13:30", "14:15", "15:15", "16:00", "17:00", "17:45", "18:45", "19:30")
+TIMEZONE: int = 9
 
-SSID = "************"
-PASSWORD = "********"
+SSID: str = "************"
+PASSWORD: str = "********"
 
 i2c = I2C(1, sda=Pin(14), scl=Pin(15))
 dht = Pin(13, Pin.IN, Pin.PULL_UP)
@@ -110,7 +110,6 @@ else:
     raise Exception("WiFi connect failed")
 
 rtc = RTC()
-timeZone = 9
 ntptime.host = NTP_URL
 
 try:
@@ -169,7 +168,7 @@ try:
         if is_init and is_online:
             led.on()
 
-        hour = t0[4] + timeZone
+        hour = t0[4] + TIMEZONE
         day = t0[2]
 
         if hour >= 24:
@@ -197,7 +196,7 @@ try:
         sec = t0[6]
 
         if is_init and is_online and nowtime in FINISH_TIME and not is_post:
-            data = {
+            data:dict[str, str|int] = {
                 "labID": LAB_ID,
                 "date": f"{t0[0]}-{t0[1]:02d}-{day:02d}",
                 "numGen": int(FINISH_TIME.index(nowtime)) + 1,
@@ -228,50 +227,13 @@ try:
                     display.add_text(f'Pres.:{data["pressure"]}hPa').show()
                 else:
                     display.multi_text("post failed", f"with {response.status_code}")
-
-            time.sleep(1)
             led.on()
 
-    #     if is_post and nowtime not in FINISH_TIME:
-    #         is_post = False
+            if is_post and nowtime not in FINISH_TIME:
+                is_post = False
 
-        if is_init and is_online and nowtime in DEBUG_TIME and not is_post:
-            data = {
-                "labID": LAB_ID,
-                "date": f"{t0[0]}-{t0[1]:02d}-{day:02d}",
-                "numGen": int(DEBUG_TIME.index(nowtime)) + 20,
-                "temperature": f'{envs["temperature"]:.2f}',
-                "humidity": f'{envs["humidity"]:.3f}',
-                "pressure": f'{envs["pressure"]:.2f}',
-            }
-
-            led.off()
-            display.multi_text("posting...")
-            try:
-                response = urequests.post(URL, data=json.dumps(data).encode("unicode_escape"), headers={"Content-Type": "application/json"})
-            except:
-                print("post failed")
-                display.multi_text("post failed")
-            else:
-                is_post = True
-                print(data["labID"])
-                print(response.status_code)
-                print(response.content)
-
-                if response.status_code == 200:
-                    display.add_text("test:success", new=True).line()
-                    display.add_text(f'date:{data["date"]}')
-                    display.add_text(f'numGen:{data["numGen"]}')
-                    display.add_text(f'Temp:{data["temperature"]}C')
-                    display.add_text(f'Hmd.:{data["humidity"]}%')
-                    display.add_text(f'Pres.:{data["pressure"]}hPa').show()
-                else:
-                    display.multi_text("post failed", f"with {response.status_code}")
-            time.sleep(1)
-            led.on()
-        if is_post and nowtime not in DEBUG_TIME and nowtime not in FINISH_TIME:
-            is_post = False
         time.sleep(1)
+
 except Exception as err:
     print(err)
     display.split_text(err)

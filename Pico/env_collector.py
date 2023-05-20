@@ -6,7 +6,7 @@ from machine import I2C, Pin
 
 
 class EnvCollector:
-    def __init__(self, interface):
+    def __init__(self, interface: I2C | Pin) -> None:
         if isinstance(interface, I2C):
             self.sensor = BME680_I2C(interface)
         elif isinstance(interface, Pin):
@@ -16,9 +16,9 @@ class EnvCollector:
         else:
             raise Exception("Unknown device")
 
-    def get_env(self):
+    def get_env(self) -> dict[str, float]:
         if isinstance(self.sensor, BME680_I2C):
-            self.envs = {
+            self.envs: dict[str, float] = {
                 "temperature": self.sensor.temperature,
                 "humidity": self.sensor.humidity,
                 "pressure": self.sensor.pressure,
