@@ -240,5 +240,5 @@ except Exception as err:
     display.split_text(err)
     with open("error.log", "a") as f:
         f.write(f"{t0[0]}-{t0[1]:02d}-{day:02d} {nowtime}")
-        sys.print_exception(file=f)
+        sys.print_exception(err, file=f)
     machine.reset()
