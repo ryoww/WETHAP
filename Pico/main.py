@@ -1,15 +1,12 @@
 import json
-import sys
 import time
 
-import machine
 import network
 import ntptime
 import urequests
-from bme680 import BME680_I2C
 from display_manager import DisplayManager
 from env_collector import EnvCollector
-from machine import I2C, RTC, Pin
+from machine import I2C, RTC, Pin, reset
 
 
 def update_time(rtc: RTC, url: str) -> bool:
@@ -235,10 +232,5 @@ try:
 
         time.sleep(1)
 
-except Exception as err:
-    print(err)
-    display.split_text(err)
-    with open("error.log", "a") as f:
-        f.write(f"{t0[0]}-{t0[1]:02d}-{day:02d} {nowtime}")
-        sys.print_exception(err, file=f)
-    machine.reset()
+except:
+    reset()
