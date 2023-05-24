@@ -61,7 +61,6 @@ class DisplayManager:
             self.display.fill(0)
             if len(texts) % 2 == 0:
                 self.current = (6 - len(texts)) // 2
-                print(self.current)
                 [self.add_text(text) for text in texts]
             else:
                 char = self.grid + self.margin

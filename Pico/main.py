@@ -227,10 +227,13 @@ try:
                     display.multi_text("post failed", f"with {response.status_code}")
             led.on()
 
-            if is_post and nowtime not in FINISH_TIME:
-                is_post = False
+        if is_post and nowtime not in FINISH_TIME:
+            is_post = False
 
         time.sleep(1)
 
-except:
+except Exception as error:
+    print(error)
+    display.split_text(error)
+    time.sleep(60)
     reset()
