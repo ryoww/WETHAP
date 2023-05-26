@@ -4,6 +4,7 @@ import time
 import network
 import ntptime
 import urequests
+from bme680 import BME680_I2C
 from display_manager import DisplayManager
 from env_collector import EnvCollector
 from machine import I2C, RTC, Pin, reset
@@ -65,19 +66,22 @@ display.add_text("booting...", new=True).line().show(False)
 try:
     collector = EnvCollector(i2c)
 except:
-    print("bme680 error")
     try:
         collector = EnvCollector(dht)
     except:
-        print("dht11 error")
+        print("DHT11 error")
         display.multi_text("no sensor detect")
         raise Exception("No sensor detect")
     else:
-        print("dht11 connect")
-        display.add_text("dht11 connect").show(False)
+        print("DHT11 connect")
+        display.add_text("DHT11 connect").show(False)
 else:
-    print("bme680 connect")
-    display.add_text("bme680 connect").show(False)
+    if isinstance(collector.sensor, BME680_I2C):
+        print("BME680 connect")
+        display.add_text("BME680 connect").show(False)
+    else:
+        print("DHT20 connect")
+        display.add_text("DHT20 connect").show(False)
 
 # 起動時初期化フラグ
 is_init = False
