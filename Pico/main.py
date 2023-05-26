@@ -48,7 +48,7 @@ PASSWORD: str = "********"
 i2c = I2C(1, sda=Pin(14, pull=Pin.PULL_UP), scl=Pin(15, pull=Pin.PULL_UP))
 dht = Pin(13, Pin.IN, Pin.PULL_UP)
 
-led = Pin("LED", Pin.OUT, value=False)
+led = Pin("LED", Pin.OUT, value=True)
 
 # ssd1306初期化
 display = DisplayManager(i2c)
@@ -58,6 +58,7 @@ if display.display:
 display.add_text("Hello World!", 3).show()
 
 time.sleep(1)
+led.off()
 display.add_text("booting...", new=True).line().show(False)
 
 # センサー初期化
@@ -131,16 +132,16 @@ try:
                 print("offline")
                 display.multi_text("wifi reconnect", "failed")
 
-        t0 = rtc.datetime()
+        now = rtc.datetime()
 
         # 内部時計更新
-        if (not is_init or (t0[5] == 0 and not is_time)) and is_online:
+        if (not is_init or (now[5] == 0 and not is_time)) and is_online:
             try:
                 ntptime.settime()
             except:
                 print("clock update by NTP failed")
                 if update_time(rtc, TIME_URL):
-                    t0 = rtc.datetime()
+                    now = rtc.datetime()
                     is_time = True
                     if not is_init:
                         is_init = True
@@ -151,53 +152,53 @@ try:
                     print("clock update by API failed")
                     display.multi_text("time update", "failed")
             else:
-                t0 = rtc.datetime()
+                now = rtc.datetime()
                 is_time = True
                 if not is_init:
                     is_init = True
                     print("initialize complete")
                 print("clock update by NTP success")
-                print(t0)
+                print(now)
                 display.multi_text("time update", "success")
-        if t0[5] != 0 and is_time:
+        if now[5] != 0 and is_time:
             is_time = False
 
         # 正常稼働通知
         if is_init and is_online:
             led.on()
 
-        hour = t0[4] + TIMEZONE
-        day = t0[2]
+        hour = now[4] + TIMEZONE
+        day = now[2]
 
         if hour >= 24:
             hour -= 24
             day += 1
 
+        led.off()
         envs = collector.get_env()
-        print(t0)
+        led.on()
+        print(now)
         print(f'Temp:{envs["temperature"]:.3f}C, Humidity:{envs["humidity"]:.3f}%, Pressure:{envs["pressure"]:.5g}hPa, Gas:{envs["gas"]}')
-        print(f"{t0[0]}-{t0[1]}-{day} {hour}:{t0[5]}:{t0[6]}")
+        print(f"{now[0]}-{now[1]}-{day} {hour}:{now[5]}:{now[6]}")
 
         # 取得データ表示
         # NOTE: ループ時間増加
         display.clear()
         time.sleep_ms(100)
-        display.add_text(f"{t0[0]}-{t0[1]:02d}-{day:02d}", new=True)
-        display.add_text(f"{hour:02d}:{t0[5]:02d}:{t0[6]:02d}").line()
+        display.add_text(f"{now[0]}-{now[1]:02d}-{day:02d}", new=True)
+        display.add_text(f"{hour:02d}:{now[5]:02d}:{now[6]:02d}").line()
         display.add_text(f'Temp:{envs["temperature"]:.3f}C')
         display.add_text(f'Hmd.:{envs["humidity"]:.3f}%')
         display.add_text(f'Pres.:{envs["pressure"]:.5g}hPa')
         display.add_text(f'Gas:{envs["gas"]}').show()
 
-        nowtime = f"{hour:02d}:{t0[5]:02d}"
+        now_time = f"{hour:02d}:{now[5]:02d}"
 
-        sec = t0[6]
-
-        if is_init and is_online and nowtime in FINISH_TIME and not is_post:
+        if is_init and is_online and now_time in FINISH_TIME and not is_post:
             data:dict[str, str|int] = {
                 "labID": LAB_ID,
-                "date": f"{t0[0]}-{t0[1]:02d}-{day:02d}",
-                "numGen": int(FINISH_TIME.index(nowtime)) + 1,
+                "date": f"{now[0]}-{now[1]:02d}-{day:02d}",
+                "numGen": int(FINISH_TIME.index(now_time)) + 1,
                 "temperature": f'{envs["temperature"]:.2f}',
                 "humidity": f'{envs["humidity"]:.3f}',
                 "pressure": f'{envs["pressure"]:.2f}',
@@ -227,7 +228,7 @@ try:
                     display.multi_text("post failed", f"with {response.status_code}")
             led.on()
 
-        if is_post and nowtime not in FINISH_TIME:
+        if is_post and now_time not in FINISH_TIME:
             is_post = False
 
         time.sleep(1)
