@@ -99,7 +99,7 @@ wlan.connect(SSID, PASSWORD)
 display.add_text("wifi activate")
 display.add_text("connecting...").show(False)
 # wifi接続待機
-max_wait = 30
+max_wait = 60
 for i in range(max_wait):
     time.sleep(1)
     if wlan.isconnected():
@@ -237,8 +237,5 @@ try:
 
         time.sleep(1)
 
-except Exception as error:
-    print(error)
-    display.split_text(error)
-    time.sleep(60)
+except Exception:
     reset()
