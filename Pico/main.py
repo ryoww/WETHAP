@@ -216,12 +216,12 @@ try:
                 print("post failed")
                 display.multi_text("post failed")
             else:
-                is_post = True
                 print(data["labID"])
                 print(response.status_code)
                 print(response.content)
 
                 if response.status_code == 200:
+                    is_post = True
                     display.add_text("post:success", new=True).line()
                     display.add_text(f'date:{data["date"]}')
                     display.add_text(f'numGen:{data["numGen"]}')
