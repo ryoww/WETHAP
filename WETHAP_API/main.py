@@ -8,12 +8,14 @@ import json
 app = Flask(__name__)
 CORS(app, supports_credentials = True)
 
-@app.route("/", methods = ["GET"])
+PREFIX = "/WETHAP/api"
+
+@app.route(PREFIX + "/", methods = ["GET"])
 def index():
     return {"status":"online"}
 
 
-@app.route("/addInfo/", methods = ["POST"])
+@app.route(PREFIX + "/addInfo/", methods = ["POST"])
 def addInfo():
     db = DBCommands(DB_PATH = "./data.db")
     data = request.get_json()
@@ -30,7 +32,7 @@ def addInfo():
     return "added"
 
 
-@app.route("/isRegistered/", methods = ["GET"])
+@app.route(PREFIX + "/isRegistered/", methods = ["GET"])
 def isRegistered():
     db = DBCommands(DB_PATH = "./data.db")
     labID = str(request.args.get("labID"))
@@ -39,7 +41,7 @@ def isRegistered():
 
     return str(isRegistered)
 
-@app.route("/registeredRooms/", methods = ["GET"])
+@app.route(PREFIX + "/registeredRooms/", methods = ["GET"])
 def registeredRooms():
     db = DBCommands(DB_PATH = "./data.db")
     data = db.registeredRooms()
@@ -47,7 +49,7 @@ def registeredRooms():
 
     return data
 
-@app.route("/previewData/", methods = ["GET"])
+@app.route(PREFIX + "/previewData/", methods = ["GET"])
 def previewData():
     db = DBCommands(DB_PATH = "./data.db")
     data = db.previewData()
@@ -56,7 +58,7 @@ def previewData():
     return data
 
 
-@app.route("/getInfo/", methods = ["GET"])
+@app.route(PREFIX + "/getInfo/", methods = ["GET"])
 def getInfo():
     db = DBCommands(DB_PATH = "./data.db")
     labID = str(request.args.get("labID"))
