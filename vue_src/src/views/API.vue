@@ -57,7 +57,7 @@ export default {
     },
     methods: {
         fetchAllData() {
-            axios.get('http://192.168.3.2/previewData')
+            axios.get('https://192.168.3.2/previewData')
                 .then(response => {
                     this.items = response.data;
                     this.isLoading = false
@@ -65,7 +65,7 @@ export default {
                 .catch(error => {
                     console.log(error);
                 });
-            axios.get('https://adelppi.duckdns.org/previewData')
+            axios.get('https://adelppi.com/previewData')
                 .then(response => {
                     this.items = response.data;
                     this.isLoading = false
@@ -73,7 +73,7 @@ export default {
                 .catch(error => {
                     console.log(error);
                 });
-            axios.get('http://192.168.3.2/registeredRooms')
+            axios.get('https://192.168.3.2/registeredRooms')
                 .then(response => {
                     this.rooms = response.data;
                     this.isLoading = false
@@ -81,7 +81,7 @@ export default {
                 .catch(error => {
                     console.log(error);
                 });
-            axios.get('https://adelppi.duckdns.org/registeredRooms')
+            axios.get('https://adelppi.com/registeredRooms')
                 .then(response => {
                     this.rooms = response.data;
                     this.isLoading = false
