@@ -1,2 +1,4 @@
 LINE_bot/key.py
 nohup.out
+*-backups
+*-cache

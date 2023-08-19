@@ -7,7 +7,7 @@ import urequests
 from bme680 import BME680_I2C
 from display_manager import DisplayManager
 from env_collector import EnvCollector
-from machine import I2C, RTC, Pin, reset
+from machine import I2C, RTC, Pin, reset, ADC
 
 
 def update_time(rtc: RTC, url: str) -> bool:
@@ -42,12 +42,16 @@ TIME_URL: str = "https://worldtimeapi.org/api/ip"
 NTP_URL: str = "ntp.nict.jp"
 FINISH_TIME: tuple[str] = ("09:25", "10:10", "11:10", "11:55", "13:30", "14:15", "15:15", "16:00", "17:00", "17:45", "18:45", "19:30")
 TIMEZONE: int = 9
+TEMP_ADJ_RANGE: int = 15
+HUMID_ADJ_RANGE: int = 30
 
 SSID: str = "************"
 PASSWORD: str = "********"
 
 i2c = I2C(1, sda=Pin(14, pull=Pin.PULL_UP), scl=Pin(15, pull=Pin.PULL_UP))
 dht = Pin(13, Pin.IN, Pin.PULL_UP)
+temp_adj = ADC(0)
+humid_adj = ADC(1)
 
 led = Pin("LED", Pin.OUT, value=True)
 
@@ -71,7 +75,7 @@ except:
     except:
         print("DHT11 error")
         display.multi_text("no sensor detect")
-        raise Exception("No sensor detect")
+        raise RuntimeError("No sensor detect")
     else:
         print("DHT11 connect")
         display.add_text("DHT11 connect").show(False)
@@ -110,7 +114,7 @@ for i in range(max_wait):
 else:
     print("offline")
     display.multi_text("wifi connect", "failed")
-    raise Exception("WiFi connect failed")
+    raise RuntimeError("WiFi connect failed")
 
 rtc = RTC()
 ntptime.host = NTP_URL
@@ -180,9 +184,17 @@ try:
 
         led.off()
         envs = collector.get_env()
+        temp_offset = (temp_adj.read_u16() / 65535 - 0.5) * 2 * TEMP_ADJ_RANGE
+        humid_offset = (humid_adj.read_u16() / 65535 - 0.5) * 2 * HUMID_ADJ_RANGE
+        print(temp_offset)
+        print(humid_offset)
+        envs["temperature"] += temp_offset
+        envs["humidity"] += humid_offset
         led.on()
         print(now)
-        print(f'Temp:{envs["temperature"]:.3f}C, Humidity:{envs["humidity"]:.3f}%, Pressure:{envs["pressure"]:.5g}hPa, Gas:{envs["gas"]}')
+        print(
+            f'Temp:{envs["temperature"]:.3f}C, Humidity:{envs["humidity"]:.3f}%, Pressure:{envs["pressure"]:.5g}hPa, Gas:{envs["gas"]}'
+        )
         print(f"{now[0]}-{now[1]}-{day} {hour}:{now[5]}:{now[6]}")
 
         # 取得データ表示
@@ -199,7 +211,7 @@ try:
         now_time = f"{hour:02d}:{now[5]:02d}"
 
         if is_init and is_online and now_time in FINISH_TIME and not is_post:
-            data:dict[str, str|int] = {
+            data: dict[str, str | int] = {
                 "labID": LAB_ID,
                 "date": f"{now[0]}-{now[1]:02d}-{day:02d}",
                 "numGen": int(FINISH_TIME.index(now_time)) + 1,
@@ -211,7 +223,11 @@ try:
             led.off()
             display.multi_text("posting...")
             try:
-                response = urequests.post(URL, data=json.dumps(data).encode("unicode_escape"), headers={"Content-Type": "application/json"})
+                response = urequests.post(
+                    URL,
+                    data=json.dumps(data).encode("unicode_escape"),
+                    headers={"Content-Type": "application/json"},
+                )
             except:
                 print("post failed")
                 display.multi_text("post failed")
