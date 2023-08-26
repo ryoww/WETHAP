@@ -1,0 +1,12 @@
+<LSMASHWorksIndexVersion=0.0.2.0>
+<LibavReaderIndexFile=13>
+<InputFilePath>C:\programs\WETHAP\assets\banner.svg</InputFilePath>
+<LibavReaderIndex=0x00000100,1,svg_pipe>
+<ActiveVideoStreamIndex>-0000000001</ActiveVideoStreamIndex>
+<ActiveAudioStreamIndex>-0000000001</ActiveAudioStreamIndex>
+</LibavReaderIndex>
+<StreamDuration=0,0>-9223372036854775808</StreamDuration>
+<StreamIndexEntries=0,0,1>
+POS=0,TS=0,Flags=1,Size=0,Distance=0
+</StreamIndexEntries>
+</LibavReaderIndexFile>
