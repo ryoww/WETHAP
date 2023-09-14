@@ -1,14 +1,3 @@
-# flask run
-# ngrok http 5000
-
-from flask import Flask, request, abort
-
-from linebot import *
-from linebot.exceptions import *
-from linebot.models import *
-
-from key import at, sk
-
 import pprint
 import re
 import requests
@@ -16,38 +5,12 @@ from datetime import datetime
 from datetime import date
 from fetch_info import fetchInfo
 
-app = Flask(__name__)
-
-line_bot_api = LineBotApi(at)
-handler = WebhookHandler(sk)
-
-@app.route("/", methods=['GET'])
-def test():
-    return "Hello"
-
-@app.route("/callback", methods=['POST'])
-def callback():
-    # get X-Line-Signature header value
-    signature = request.headers['X-Line-Signature']
-
-    # get request body as text
-    body = request.get_data(as_text=True)
-    app.logger.info("Request body: " + body)
-
-    # handle webhook body
-    try:
-        handler.handle(body, signature)
-    except InvalidSignatureError:
-        print("Invalid signature. Please check your channel access token/channel secret.")
-        abort(400)
-
-    return 'OK'
-
 
 # set situation
 STATE_INITIAL = 0
 STATE_LOCATION_RECEIVED = 1
 STATE_DATE_RECEIVED = 2
+
 
 # end time
 endTime = {
@@ -65,18 +28,16 @@ endTime = {
     12: "19:30"
     }
 
-# # lower limit date
-# mindate = datetime(2023,3,16).date()
-
 
 # process initial situation
 def initial_state(event):
 
     text = "情報を知りたい研究室又は実験室を教えてください。"
 
-    line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
     # change situation submitted location
     update_id_dict(event.source.user_id,state = STATE_LOCATION_RECEIVED)
+
+    return text
 
 
 # process after submitted location
@@ -89,12 +50,14 @@ def location_received_state(event, location):
 
 
         text = (f"{location}の情報を知りたい日付と実験時間を教えてください。(例:4月1日4限)")
-        line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
+
+        return text
 
     # if not registered location "plrease retype"
     else:
         text = "登録されている実験室又は研究室を入力ください。"
-        line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
+
+        return text
 
 
 id_dict = {}
@@ -131,7 +94,7 @@ def register_id(id,**new_data):
 state = STATE_INITIAL
 location = ""
 
-@handler.add(MessageEvent,message=TextMessage)
+
 def handle_message(event):
     global state, location, date, num_gen
 
@@ -187,11 +150,13 @@ def handle_message(event):
 
                 if 1 > num_gen < 12:
                     text = "1~12限を入力してください"
-                    line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
+
+                    return text
 
                 elif date > now_day:
                     text = "いつからWETHAPが未来を観測できると錯覚していた？もう一度入力しやがれ！！"
-                    line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
+
+                    return text
 
                 # elif date < mindate:
                 #     text = "データがありません"
@@ -199,15 +164,16 @@ def handle_message(event):
 
                 elif date == now_day and endtime > nowtime:
                     text = "反映までもう少々お待ちください。"
-                    line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
 
                     # set initial state
                     delete_data(event.source.user_id)
 
+                    return text
+
                 else:
                         # 4/1~submit
-                        # if 3 >= now.month >= 1 and 12 >= date.month >= 4:
-                        #     date.replace(year =  now.year - 1)
+                        if 3 >= now.month >= 1 and 12 >= date.month >= 4:
+                            date.replace(year =  now.year - 1)
 
                         location = str(id_dict[event.source.user_id]["location"])
                         print(location)
@@ -217,28 +183,24 @@ def handle_message(event):
                         AP = info["pressure"]
                         WE = info["weather"]
                         text = (f"{date.year}年{text}の{location}の情報は以下の通りです\n気温 : {T}℃\n湿度 : {H}%\n気圧 : {AP}hPa\n天気 : {WE}")
-                        line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
 
                         # set initial state
                         delete_data(event.source.user_id)
                         print(id_dict)
 
+                        return text
+
 
             else :
                 text = "正しく入力又は半角数字でしてください。あ"
-                line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
+                return text
 
         except Exception as e:
             print(e)
             text = "正しく入力又は半角数字でしてください。"
-            line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
+            return text
 
     else:
 
         text = "「教えて」と入力すると情報を教えてくれます。場所を指定すると日付を聞かれます。日付を指定すると情報を返します。"
-
-        line_bot_api.reply_message(event.reply_token,TextSendMessage(text))
-
-
-if __name__ == "__main__":
-    app.run()
+        return text
