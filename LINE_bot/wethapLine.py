@@ -95,7 +95,7 @@ state = STATE_INITIAL
 location = ""
 
 
-def handle_message(event):
+def handle_text(event):
     global state, location, date, num_gen
 
     print(state)
