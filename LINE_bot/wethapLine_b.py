@@ -1,6 +1,7 @@
 import pprint
 import re
 import requests
+import json
 from datetime import datetime
 from datetime import date
 from fetch_info import fetchInfo
@@ -69,11 +70,13 @@ def update_id_dict(id,**update_data):
     else:
         print(f"{id} not found")
 
+
 def delete_data(id):
     if id in id_dict.keys():
         del id_dict[id]
     else:
         print(f"{id} not found")
+
 
 def add_data(id,**new_data):
     if id in id_dict.keys():
