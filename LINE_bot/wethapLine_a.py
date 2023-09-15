@@ -92,11 +92,23 @@ def location_received_state(event, location):
         return text
 
 
-def handle_text(event):
+def date_numgen_received_state(message):
     # set time
     now = datetime.now()
     now_day = now.date()
     now_time = now.time()
+
+    try:
+        # get day
+        if "月" in message and "日" in message and "限" in message:
+            pattern = r"(\d{1,2}月\d{1,2}日)(\d+)限"
+
+    except Exception as e :
+        text = "正しく入力又は半角数字で入力してください"
+
+
+# impoted func by app.py
+def handle_text(event):
 
     user_dict = load_json()
 
@@ -112,7 +124,13 @@ def handle_text(event):
         return "情報を知りたい研究室又は実験室教えてください"
 
 
+    # location received
     elif user_dict[event.source.user_id]["state"] == STATE_LOCATION_RECEIVED:
         text = location_received_state(event.source.user_id, event.message.text)
 
         return text
+
+
+    # date & numgen received
+    elif user_dict[event.source.user_id]["state"] == STATE_DATE_RECEIVED:
+        text = date_numgen_received_state(event.message.text)
