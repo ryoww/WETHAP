@@ -1,17 +1,14 @@
 import re
 import requests
 import json
-import pprint
-
 
 from datetime import datetime
 from fetch_info import fetchInfo
 
 
 # set situation
-STATE_INITIAL = 0
-STATE_LOCATION_RECEIVED = 1
-STATE_DATE_RECEIVED = 2
+STATE_LOCATION_RECEIVED = 0
+STATE_DATE_RECEIVED = 1
 
 
 # end time
@@ -33,8 +30,8 @@ endTime = {
 
 def load_json():
     with open("data.json", "r") as file:
-        data = json.load(file)
-    return data
+        user_dict = json.load(file)
+    return user_dict
 
 
 def write_json(data):
@@ -43,37 +40,55 @@ def write_json(data):
 
 
 def delete_json(id):
-    data = load_json()
+    user_dict = load_json()
 
-    del data[id]
+    del user_dict[id]
 
-    write_json(data)
+    write_json(user_dict)
 
 
 def update_data(id, **new_data):
-    data = load_json()
+    user_dict = load_json()
 
-    if id in data.keys():
+    if id in user_dict.keys():
         for key, value in new_data.items():
-            data[id][key] = value
+            user_dict[id][key] = value
 
-        write_json(data)
+        write_json(user_dict)
 
 
-def register_data(id, **new_data):
-    data = load_json()
+def add_id_data(id, **new_data):
+    user_dict = load_json()
 
-    if id in data.keys():
-        return "already exisits"
+    user_dict[id] = new_data
 
-    else :
-        data[id] = new_data
+    write_json(user_dict)
 
-        write_json(data)
+
+def register_user_dict(event):
+    user_dict = load_json()
+
+    if event.source.use_id not in user_dict.keys():
+        add_id_data(event.source.user_id, state=STATE_LOCATION_RECEIVED)
+
+        text = "情報を知りたい研究室又は実験室を教えてください。"
+
+        return text
+
+    else:
+        # reset user_id
+        delete_json(event.source.user_id)
+
+        add_id_data(event.source.user_id, STATE_LOCATION_RECEIVED)
+
+        text = "情報を知りたい研究室又は実験室を教えてください。"
+
+        return text
 
 
 # process after submitted location
-def location_received_state(event, location):
+def location_received_state(event):
+    location = event.message.text
 
     # request API
     isRegisterd = requests.get(f"https://adelppi.duckdns.org/isRegistered/?labID={location}").text
@@ -90,6 +105,7 @@ def location_received_state(event, location):
         text = "登録されている実験室又は研究室を入力ください。"
 
         return text
+
 
 # last process
 def date_numgen_received_state(event):
@@ -157,26 +173,28 @@ def handle_text(event):
 
     user_dict = load_json()
 
-    # if "教え" in message, register id
+    # first section
     if "教え" in event.message.text:
-
-        # set initial state and register id
-        # ここ絶対に改善の余地あり(一連の動作を一つの関数で済ませたい)
-        if str(event.source.user_id) not in user_dict.keys():
-            register_data(event.source.user_id, state = STATE_INITIAL)
-
-        update_data(event.source.user_id, state = STATE_LOCATION_RECEIVED)
-
-        return "情報を知りたい研究室又は実験室教えてください"
-
-
-    # location received
-    elif user_dict[event.source.user_id]["state"] == STATE_LOCATION_RECEIVED:
-        text = location_received_state(event.source.user_id, event.message.text)
+        text = register_user_dict(event)
 
         return text
 
 
-    # date & numgen received
+    # second section
+    elif user_dict[event.source.user_id]["state"] == STATE_LOCATION_RECEIVED:
+        text = location_received_state(event)
+
+        return text
+
+
+    # third section
     elif user_dict[event.source.user_id]["state"] == STATE_DATE_RECEIVED:
         text = date_numgen_received_state(event)
+
+        return text
+
+    # if didn't match conditions
+    else:
+        text = "「教えて」と入力すると情報を教えてくれます。場所を指定すると日付を聞かれます。日付を指定すると情報を返します。"
+
+        return text
