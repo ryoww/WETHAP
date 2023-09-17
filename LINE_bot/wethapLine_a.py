@@ -193,6 +193,7 @@ def handle_text(event):
 
         return text
 
+
     # if didn't match conditions
     else:
         text = "「教えて」と入力すると情報を教えてくれます。場所を指定すると日付を聞かれます。日付を指定すると情報を返します。"
