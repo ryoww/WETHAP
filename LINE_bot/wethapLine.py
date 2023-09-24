@@ -34,8 +34,19 @@ def load_json():
     return user_dict
 
 
+def load_every_json():
+    with open("every_week_send.json", "r") as file:
+        user_dict = json.load(file)
+    return user_dict
+
+
 def write_json(data):
     with open("data.json", "w") as file:
+        json.dump(data, file, indent=4)
+
+
+def write_every_json(data):
+    with open("every_week_send.json", "w") as file:
         json.dump(data, file, indent=4)
 
 
@@ -45,6 +56,14 @@ def delete_json(id):
     del user_dict[id]
 
     write_json(user_dict)
+
+
+def delete_every_json(id):
+    user_dict = load_every_json()
+
+    del user_dict[id]
+
+    write_every_json(user_dict)
 
 
 def update_data(id, **new_data):
@@ -57,12 +76,22 @@ def update_data(id, **new_data):
         write_json(user_dict)
 
 
+def update_every_data(id, **new_data):
+    user_dict = load_every_json()
+
+    if id in user_dict.keys():
+        for key, value in new_data.items():
+            user_dict[id][key] = value
+        write_json(user_dict)
+
+
 def add_id_data(id, **new_data):
     user_dict = load_json()
 
     user_dict[id] = new_data
 
     write_json(user_dict)
+
 
 
 def register_user_dict(event):
@@ -190,6 +219,12 @@ def handle_text(event):
     # third section
     elif user_dict[event.source.user_id]["state"] == STATE_DATE_RECEIVED:
         text = date_numgen_received_state(event)
+
+        return text
+
+
+    if "登録" in event.message.text:
+        text = register_every_week_user(event)
 
         return text
 

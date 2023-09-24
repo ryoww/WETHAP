@@ -3,9 +3,9 @@
 
 from flask import Flask, request, abort
 
-from linebot import *
-from linebot.exceptions import *
-from linebot.models import *
+from linebot import LineBotApi, WebhookHandler
+from linebot.exceptions import InvalidSignatureError
+from linebot.models import MessageEvent, TextMessage, TextSendMessage
 
 from wethapLine import handle_text
 
