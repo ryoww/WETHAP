@@ -97,7 +97,7 @@ def add_id_data(id, **new_data):
 def register_user_dict(event):
     user_dict = load_json()
 
-    if event.source.use_id not in user_dict.keys():
+    if event.source.user_id not in user_dict.keys():
         add_id_data(event.source.user_id, state=STATE_LOCATION_RECEIVED)
 
         text = "情報を知りたい研究室又は実験室を教えてください。"
@@ -113,6 +113,13 @@ def register_user_dict(event):
         text = "情報を知りたい研究室又は実験室を教えてください。"
 
         return text
+
+
+def register_every_week_user(event):
+    user_dict = load_every_json()
+
+    if event.source.user_id in user_dict.keys():
+        text = ""
 
 
 # process after submitted location
