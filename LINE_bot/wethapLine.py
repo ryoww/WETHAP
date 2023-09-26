@@ -9,6 +9,8 @@ from fetch_info import fetchInfo
 # set situation
 STATE_LOCATION_RECEIVED = 0
 STATE_DATE_RECEIVED = 1
+ADD_OR_REFLESH = 2
+ADDED_EVERY_USER = 3
 
 
 # end time
@@ -93,6 +95,13 @@ def add_id_data(id, **new_data):
     write_json(user_dict)
 
 
+def add_every_id_data(id, **new_data):
+    user_dict = load_every_json()
+
+    user_dict[id] = new_data
+
+    write_every_json(user_dict)
+
 
 def register_user_dict(event):
     user_dict = load_json()
@@ -119,8 +128,13 @@ def register_every_week_user(event):
     user_dict = load_every_json()
 
     if event.source.user_id in user_dict.keys():
-        text = ""
+        text = "既に登録されています。追加しますか？更新しますか？"
 
+
+    else:
+        add_every_id_data(event.source.user_id, status=ADDED_EVERY_USER)
+
+        text = ""
 
 # process after submitted location
 def location_received_state(event):
