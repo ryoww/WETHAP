@@ -1,13 +1,13 @@
 import json
-import time
 
 import network
 import ntptime
 import urequests
-from bme680 import BME680_I2C
+import utime
+from machine import ADC, I2C, RTC, Pin, reset
+
 from display_manager import DisplayManager
 from env_collector import EnvCollector
-from machine import I2C, RTC, Pin, reset, ADC
 
 
 def update_time(rtc: RTC, url: str) -> bool:
@@ -29,7 +29,9 @@ def update_time(rtc: RTC, url: str) -> bool:
         second, second_sub = list(map(int, seconds.split(".")))
         week = data["day_of_week"]
 
-        rtc.datetime((year, month, day, week, int(hour), int(minute), second, second_sub))
+        rtc.datetime(
+            (year, month, day, week, int(hour), int(minute), second, second_sub)
+        )
         return True
     else:
         return False
@@ -40,7 +42,20 @@ LAB_ID: str = "T4教室"
 URL: str = "https://adelppi.duckdns.org/addInfo"
 TIME_URL: str = "https://worldtimeapi.org/api/ip"
 NTP_URL: str = "ntp.nict.jp"
-FINISH_TIME: tuple[str] = ("09:25", "10:10", "11:10", "11:55", "13:30", "14:15", "15:15", "16:00", "17:00", "17:45", "18:45", "19:30")
+FINISH_TIME: tuple[str] = (
+    "09:25",
+    "10:10",
+    "11:10",
+    "11:55",
+    "13:30",
+    "14:15",
+    "15:15",
+    "16:00",
+    "17:00",
+    "17:45",
+    "18:45",
+    "19:30",
+)
 TIMEZONE: int = 9
 TEMP_ADJ_RANGE: int = 15
 HUMID_ADJ_RANGE: int = 30
@@ -62,7 +77,7 @@ if display.display:
     display.display.rect(5, 20, 118, 35, 1)
 display.add_text("Hello World!", 3).show()
 
-time.sleep(1)
+utime.sleep(1)
 led.off()
 display.add_text("booting...", new=True).line().show(False)
 
@@ -70,22 +85,23 @@ display.add_text("booting...", new=True).line().show(False)
 try:
     collector = EnvCollector(i2c)
 except:
-    try:
-        collector = EnvCollector(dht)
-    except:
-        print("DHT11 error")
-        display.multi_text("no sensor detect")
-        raise RuntimeError("No sensor detect")
-    else:
-        print("DHT11 connect")
-        display.add_text("DHT11 connect").show(False)
+    display.multi_text("no sensor detect")
+    raise RuntimeError("No sensor detect")
 else:
-    if isinstance(collector.sensor, BME680_I2C):
-        print("BME680 connect")
-        display.add_text("BME680 connect").show(False)
-    else:
+    if "DHT20" in collector.sensors:
         print("DHT20 connect")
         display.add_text("DHT20 connect").show(False)
+        try:
+            collector.add_sub_sensor(i2c)
+        except:
+            print("LPS25HB not connect")
+            display.add_text("no sub sensor").show(False)
+        else:
+            print("LS25HB connect")
+            display.add_text("LPS25HB connect").show(False)
+    else:
+        print("BME680 connect")
+        display.add_text("BME680 connect").show(False)
 
 # 起動時初期化フラグ
 is_init = False
@@ -105,7 +121,7 @@ display.add_text("connecting...").show(False)
 # wifi接続待機
 max_wait = 60
 for i in range(max_wait):
-    time.sleep(1)
+    utime.sleep(1)
     if wlan.isconnected():
         is_online = True
         print("online")
@@ -129,7 +145,7 @@ try:
             display.multi_text("offline detect")
             wlan.connect(SSID, PASSWORD)
             for i in range(max_wait):
-                time.sleep(1)
+                utime.sleep(1)
                 if wlan.isconnected():
                     led.on()
                     is_online = True
@@ -200,13 +216,16 @@ try:
         # 取得データ表示
         # NOTE: ループ時間増加
         display.clear()
-        time.sleep_ms(100)
-        display.add_text(f"{now[0]}-{now[1]:02d}-{day:02d}", new=True)
-        display.add_text(f"{hour:02d}:{now[5]:02d}:{now[6]:02d}").line()
-        display.add_text(f'Temp:{envs["temperature"]:.3f}C')
-        display.add_text(f'Hmd.:{envs["humidity"]:.3f}%')
-        display.add_text(f'Pres.:{envs["pressure"]:.5g}hPa')
-        display.add_text(f'Gas:{envs["gas"]}').show()
+        utime.sleep_ms(100)
+
+        display.multi_text(
+            f"{now[0]}-{now[1]:02d}-{day:02d}",
+            f"{hour:02d}:{now[5]:02d}:{now[6]:02d}",
+            f'Temp:{envs["temperature"]:.3f}C',
+            f'Hmd.:{envs["humidity"]:.3f}%',
+            f'Pres.:{envs["pressure"]:.5g}hPa',
+            lines=[2],
+        )
 
         now_time = f"{hour:02d}:{now[5]:02d}"
 
@@ -214,7 +233,7 @@ try:
             data: dict[str, str | int] = {
                 "labID": LAB_ID,
                 "date": f"{now[0]}-{now[1]:02d}-{day:02d}",
-                "numGen": int(FINISH_TIME.index(now_time)) + 1,
+                "numGen": int(FINISH_index(now_time)) + 1,
                 "temperature": f'{envs["temperature"]:.2f}',
                 "humidity": f'{envs["humidity"]:.3f}',
                 "pressure": f'{envs["pressure"]:.2f}',
@@ -251,7 +270,7 @@ try:
         if is_post and now_time not in FINISH_TIME:
             is_post = False
 
-        time.sleep(1)
+        utime.sleep(1)
 
 except Exception:
     reset()
