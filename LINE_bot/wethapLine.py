@@ -128,13 +128,16 @@ def register_every_week_user(event):
     user_dict = load_every_json()
 
     if event.source.user_id in user_dict.keys():
+
+
         text = "既に登録されています。追加しますか？更新しますか？"
 
 
     else:
         add_every_id_data(event.source.user_id, status=ADDED_EVERY_USER)
 
-        text = ""
+        text = "毎週何曜日に送信しますか？"
+
 
 # process after submitted location
 def location_received_state(event):

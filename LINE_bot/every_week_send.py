@@ -23,5 +23,3 @@ def main():
     text = ""
 
     line_bot_api[3].push_message(user_id, TextSendMessage(text))
-
-
