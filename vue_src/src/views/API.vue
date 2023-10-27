@@ -57,14 +57,14 @@ export default {
     },
     methods: {
         fetchAllData() {
-            axios.get('https://192.168.3.2/previewData')
-                .then(response => {
-                    this.items = response.data;
-                    this.isLoading = false
-                })
-                .catch(error => {
-                    console.log(error);
-                });
+            // axios.get('https://192.168.3.2/previewData')
+            //     .then(response => {
+            //         this.items = response.data;
+            //         this.isLoading = false
+            //     })
+            //     .catch(error => {
+            //         console.log(error);
+            //     });
             axios.get('https://solithv7247.duckdns.org/previewData')
                 .then(response => {
                     this.items = response.data;
@@ -73,14 +73,14 @@ export default {
                 .catch(error => {
                     console.log(error);
                 });
-            axios.get('https://192.168.3.2/registeredRooms')
-                .then(response => {
-                    this.rooms = response.data;
-                    this.isLoading = false
-                })
-                .catch(error => {
-                    console.log(error);
-                });
+            // axios.get('https://192.168.3.2/registeredRooms')
+            //     .then(response => {
+            //         this.rooms = response.data;
+            //         this.isLoading = false
+            //     })
+            //     .catch(error => {
+            //         console.log(error);
+            //     });
             axios.get('https://solithv7247.duckdns.org/registeredRooms')
                 .then(response => {
                     this.rooms = response.data;
