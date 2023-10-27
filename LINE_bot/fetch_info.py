@@ -3,20 +3,27 @@ import json
 from datetime import datetime
 from datetime import date
 
-API_BASE_URL = "https://adelppi.duckdns.org/getInfo"
+API_BASE_URL = "https://solithv7247.duckdns.org/WETHAP/api/getInfo/"
 
 # dateをyyyy/mm/ddの形で渡してdate.year,date.month,date.dayで分ける方がいい？
-def fetchInfo(location, date, num_gen):
-    inputURL = f"{API_BASE_URL}/?labID={location}&date={date.year}-{date.month}-{date.day}&numGen={num_gen}"
+def fetchInfo():
+    now = datetime.now()
+
+    inputURL = f"{API_BASE_URL}?labID=ラズパイカフェ&date={now.year}-{now.month}-{now.day}"
     print(inputURL)
     response = requests.get(inputURL)
-    fetchedData = json.loads(response.text)
+    info = json.loads(response.text)
 
-    return fetchedData
+    T = info["temperature"]
+    H = info["humidity"]
+    AP = info["pressure"]
+    WE = info["weather"]
+    text = (f"{now.year}年{now.month}月{now.day}日{now.hour}時{now.minute}分のラズパイカフェの情報は以下の通りです\n気温 : {T}℃\n湿度 : {H}%\n気圧 : {AP}hPa\n天気 : {WE}")
+
+    return text
 
 if __name__ == "__main__":
-    date = date(2023,4,3)
     print(date)
-    infoDict= fetchInfo("下沢家", date , 1)
+    infoDict= fetchInfo()
 
     print(infoDict)

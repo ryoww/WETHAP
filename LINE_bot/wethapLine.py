@@ -258,3 +258,10 @@ def handle_text(event):
         text = "「教えて」と入力すると情報を教えてくれます。場所を指定すると日付を聞かれます。日付を指定すると情報を返します。"
 
         return text
+
+
+# kousensai imported
+def cafe(event):
+
+    if "教え" in event.message.text:
+        return fetchInfo()
