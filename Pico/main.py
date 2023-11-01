@@ -6,6 +6,7 @@ import urequests
 import utime
 from machine import ADC, I2C, RTC, Pin, reset
 
+import env
 from display_manager import DisplayManager
 from env_collector import EnvCollector
 
@@ -39,7 +40,7 @@ def update_time(rtc: RTC, url: str) -> bool:
 
 # 定数定義
 LAB_ID: str = "T4教室"
-URL: str = "https://adelppi.duckdns.org/addInfo"
+URL: str = env.API_URL
 TIME_URL: str = "https://worldtimeapi.org/api/ip"
 NTP_URL: str = "ntp.nict.jp"
 FINISH_TIME: tuple[str] = (
@@ -60,8 +61,8 @@ TIMEZONE: int = 9
 TEMP_ADJ_RANGE: int = 15
 HUMID_ADJ_RANGE: int = 30
 
-SSID: str = "************"
-PASSWORD: str = "********"
+SSID: str = env.SSID
+PASSWORD: str = env.PASSWORD
 
 i2c = I2C(1, sda=Pin(14, pull=Pin.PULL_UP), scl=Pin(15, pull=Pin.PULL_UP))
 dht = Pin(13, Pin.IN, Pin.PULL_UP)
@@ -233,7 +234,7 @@ try:
             data: dict[str, str | int] = {
                 "labID": LAB_ID,
                 "date": f"{now[0]}-{now[1]:02d}-{day:02d}",
-                "numGen": int(FINISH_index(now_time)) + 1,
+                "numGen": int(FINISH_TIME.index(now_time)) + 1,
                 "temperature": f'{envs["temperature"]:.2f}',
                 "humidity": f'{envs["humidity"]:.3f}',
                 "pressure": f'{envs["pressure"]:.2f}',
