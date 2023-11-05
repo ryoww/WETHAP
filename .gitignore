@@ -2,5 +2,6 @@ LINE_bot/key.py
 nohup.out
 *-backups
 *-cache
+__pycache__
 .env
 env.py
