@@ -66,7 +66,7 @@ class DBManager:
 
     def delete_table(self) -> None:
         """テーブルを削除"""
-        self.cursor.execute(f"DROP TABLE IF {self.table}")
+        self.cursor.execute(f"DROP TABLE {self.table}")
         self.connection.commit()
 
     def insert(

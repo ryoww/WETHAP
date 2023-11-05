@@ -59,16 +59,17 @@ def insert_data(data):
     json_data = json.loads(data)
     db_manager.insert(
         labID=json_data["labID"],
-        date=json_data["date"],
+        date=json_data.get("date", str(datetime.date.today())),
         numGen=json_data["numGen"],
         temperature=json_data["temperature"],
         humidity=json_data["humidity"],
         pressure=json_data["pressure"],
         weather=fetchWeather(),
     )
+    print(json_data)
 
 
-@app.websocket("/ws")
+@app.websocket(f"{prefix}/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await ws_manager.connect(websocket)
     try:
@@ -97,6 +98,7 @@ async def add_info(data: Info):
         pressure=data.pressure,
         weather=fetchWeather(),
     )
+    print(data)
     return {"status": "added"}
 
 
@@ -126,7 +128,6 @@ async def get_info(labID: str, date: str, numGen: int):
 
 async def request_info():
     print("request info")
-    print(ws_manager.active_connections)
     await ws_manager.broadcast("request info")
 
 
