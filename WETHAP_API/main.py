@@ -5,7 +5,7 @@ import os
 
 import dotenv
 import uvicorn
-from DB_manager import DBManager
+from DB_manager import infosManager
 from fastapi import FastAPI
 from fastapi.websockets import WebSocket, WebSocketDisconnect
 from fetchWeather import fetchWeather
@@ -50,7 +50,7 @@ prefix = os.environ.get("PREFIX")
 app = FastAPI()
 
 ws_manager = websocketManager()
-db_manager = DBManager(table="infos", **db_config)
+db_manager = infosManager(table="infos", **db_config)
 
 loop = asyncio.get_event_loop()
 

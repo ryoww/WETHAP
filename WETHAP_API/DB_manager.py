@@ -3,21 +3,8 @@ from decimal import Decimal
 
 import psycopg2
 
-TABLE_FIELD_TYPES = tuple[
-    int,
-    str,
-    datetime.date,
-    int,
-    Decimal,
-    Decimal,
-    Decimal,
-    str,
-    datetime.datetime,
-    datetime.datetime,
-]
 
-
-class DBManager:
+class tableManager:
     def __init__(
         self,
         table: str,
@@ -44,8 +31,65 @@ class DBManager:
         )
         self.cursor: psycopg2.extensions.cursor = self.connection.cursor()
 
+    def create_table(self):
+        """テーブルを作成"""
+        raise NotImplementedError
+
+    def delete_table(self) -> None:
+        """テーブルを削除"""
+        self.cursor.execute(f"DROP TABLE IF EXISTS {self.table}")
+        self.connection.commit()
+
+    def init_table(self) -> None:
+        """テーブルを初期化"""
+        self.delete_table()
+        self.create_table()
+
+    def preview_data(self):
+        """全レコードを取得"""
+        self.cursor.execute(f"SELECT * FROM {self.table}")
+        response = self.cursor.fetchall()
+        return response
+
+    def insert(self):
+        """レコードを追加"""
+        raise NotImplementedError
+
+    def update(self):
+        """レコードを更新"""
+        raise NotImplementedError
+
+    def select(self):
+        """条件に合うレコードを取得"""
+        raise NotImplementedError
+
+    def remove(self):
+        """条件に合うレコードを削除"""
+        raise NotImplementedError
+
+    def close(self) -> None:
+        """DBを保存し切断"""
+        self.cursor.close()
+        self.connection.commit()
+        self.connection.close()
+
+
+class infosManager(tableManager):
+    INFO_TABLE_TYPES = tuple[
+        int,
+        str,
+        datetime.date,
+        int,
+        Decimal,
+        Decimal,
+        Decimal,
+        str,
+        datetime.datetime,
+        datetime.datetime,
+    ]
+
     def create_table(self) -> None:
-        """WETHAP用のtableを作成"""
+        """WETHAP infos用のテーブルを作成"""
         self.cursor.execute(
             f"""
             CREATE TABLE IF NOT EXISTS {self.table} (
@@ -62,11 +106,6 @@ class DBManager:
             );
             """
         )
-        self.connection.commit()
-
-    def delete_table(self) -> None:
-        """テーブルを削除"""
-        self.cursor.execute(f"DROP TABLE {self.table}")
         self.connection.commit()
 
     def insert(
@@ -141,7 +180,7 @@ class DBManager:
         )
         self.connection.commit()
 
-    def select(self, labID: str, date: str, numGen: int) -> TABLE_FIELD_TYPES:
+    def select(self, labID: str, date: str, numGen: int) -> INFO_TABLE_TYPES:
         """条件に合うレコードを取得
 
         Args:
@@ -150,7 +189,7 @@ class DBManager:
             numGen (int): 時限
 
         Returns:
-            TABLE_FIELD_TYPES: 検索結果
+            INFO_TABLE_TYPES: 検索結果
         """
         self.cursor.execute(
             f"""
@@ -191,21 +230,50 @@ class DBManager:
 
     def preview_data(
         self,
-    ) -> list[TABLE_FIELD_TYPES]:
+    ) -> list[INFO_TABLE_TYPES]:
         """全レコードを取得
 
         Returns:
-            list[TABLE_FIELD_TYPES]: 全レコード
+            list[INFO_TABLE_TYPES]: 全レコード
         """
         self.cursor.execute(f"SELECT * FROM {self.table} ORDER BY id")
         response = self.cursor.fetchall()
         return response
 
-    def close(self) -> None:
-        """DBを保存し切断"""
-        self.cursor.close()
+
+class senderManager(tableManager):
+    def create_table(self) -> None:
+        """WETHAP sender用のtableを作成"""
+        self.cursor.execute(
+            f"""
+            CREATE TABLE IF NOT EXISTS {self.table} (
+                id bytea PRIMARY KEY,
+                labID text,
+                create_at timestamptz NOT NULL DEFAULT current_timestamp,
+                update_at timestamptz NOT NULL DEFAULT current_timestamp
+            );
+            """
+        )
         self.connection.commit()
-        self.connection.close()
+
+    def get_labID(self, id: bytearray):
+        """端末に割り当てられているlabIDを取得
+
+        Args:
+            id (bytearray): 端末固有id
+        """
+        self.cursor.execute(
+            f"""SELECT labID FROM {self.table} WHERE id = %s ORDER BY update_at""",
+            (id,),
+        )
+        response = self.cursor.fetchall()
+        return response[-1] if response else None
+
+    def get_all_labID(self):
+        """端末に割り当てられているlabIDの一覧を取得"""
+        self.cursor.execute(f"""SELECT DISTINCT labID FROM {self.table}""")
+        response = self.cursor.fetchall()
+        return response[-1] if response else None
 
 
 if __name__ == "__main__":
@@ -221,11 +289,16 @@ if __name__ == "__main__":
         "host": os.environ.get("DB_HOST"),
         "port": os.environ.get("DB_PORT"),
     }
-    manager = DBManager(table="infos", **db_config)
-    # print(manager.preview_data())
-    # manager.delete_table()
-    manager.create_table()
-    # manager.insert("テスト", str(datetime.date.today()), 0.0, 0.0, 0.0, 0.0, "晴れ")
-    # manager.update(10, "更新", str(datetime.date.today()), 1.0, 1.0, 1.0, 1.0, "雨")
-    print(manager.preview_data())
-    manager.close()
+    infos_manager = infosManager(table="infos", **db_config)
+    # print(infos_manager.preview_data())
+    # infos_manager.delete_table()
+    # infos_manager.create_table()
+    # infos_manager.insert("テスト", str(datetime.date.today()), 0.0, 0.0, 0.0, 0.0, "晴れ")
+    # infos_manager.update(10, "更新", str(datetime.date.today()), 1.0, 1.0, 1.0, 1.0, "雨")
+    print(infos_manager.preview_data())
+    infos_manager.close()
+
+    sender_manager = senderManager("sender", **db_config)
+    sender_manager.init_table()
+    print(sender_manager.preview_data())
+    sender_manager.close()
