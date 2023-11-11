@@ -3,3 +3,5 @@ nohup.out
 *-backups
 *-cache
 invoice/
+.env
+env.py
