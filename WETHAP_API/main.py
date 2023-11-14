@@ -52,8 +52,6 @@ app = FastAPI()
 ws_manager = websocketManager()
 db_manager = infosManager(table="infos", **db_config)
 
-loop = asyncio.get_event_loop()
-
 
 def insert_data(data):
     json_data = json.loads(data)
@@ -132,7 +130,6 @@ async def request_info():
 
 
 async def run_at(schedule_times: list[datetime.time]):
-    loop = asyncio.get_event_loop()
     while True:
         now = datetime.datetime.now()
         next_run_time: datetime.datetime = None
@@ -150,16 +147,23 @@ async def run_at(schedule_times: list[datetime.time]):
                 next_run_time = schedule_datetime
         time_until_next_run = (next_run_time - now).total_seconds()
         await asyncio.sleep(time_until_next_run)
-        loop.create_task(request_info())
+        await request_info()
 
 
 async def start_app():
     uvicorn_config = uvicorn.Config(app, host="0.0.0.0", port=8000)
     server = uvicorn.Server(uvicorn_config)
     await server.serve()
+    [task.cancel() for task in asyncio.all_tasks()]
+
+
+async def main():
+    tasks = [run_at(FINISH_TIME), start_app()]
+    try:
+        await asyncio.gather(*tasks)
+    except asyncio.CancelledError:
+        pass
 
 
 if __name__ == "__main__":
-    loop.create_task(run_at(FINISH_TIME))
-    loop.create_task(start_app())
-    loop.run_forever()
+    asyncio.run(main())
