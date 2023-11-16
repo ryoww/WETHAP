@@ -11,7 +11,8 @@ dotenv.load_dotenv()
 
 
 def post():
-    URL = f"http://{os.environ.get('SERVER_URI')}{os.environ.get('PREFIX')}/addInfo"
+    URL = f"http://solithv7247.duckdns.org{os.environ.get('PREFIX')}/addInfo"
+    URL = f"http://127.0.0.1:{os.environ.get('SERVER_PORT')}{os.environ.get('PREFIX')}/addInfo"
 
     postInfo = {
         "labID": "テスト研究室",

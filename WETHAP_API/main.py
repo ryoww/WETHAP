@@ -10,7 +10,7 @@ from fastapi import FastAPI
 from fastapi.websockets import WebSocket, WebSocketDisconnect
 from fetchWeather import fetchWeather
 from pydantic import BaseModel
-from ws_manager import websocketManager
+from utils.ws_manager import websocketManager
 
 
 class Info(BaseModel):
@@ -151,10 +151,14 @@ async def run_at(schedule_times: list[datetime.time]):
 
 
 async def start_app():
-    uvicorn_config = uvicorn.Config(app, host="0.0.0.0", port=8000)
+    uvicorn_config = uvicorn.Config(
+        app, host="0.0.0.0", port=int(os.environ.get("SERVER_PORT"))
+    )
     server = uvicorn.Server(uvicorn_config)
-    await server.serve()
-    [task.cancel() for task in asyncio.all_tasks()]
+    try:
+        await server.serve()
+    finally:
+        [task.cancel() for task in asyncio.all_tasks()]
 
 
 async def main():
@@ -162,7 +166,7 @@ async def main():
     try:
         await asyncio.gather(*tasks)
     except asyncio.CancelledError:
-        pass
+        print("server killed")
 
 
 if __name__ == "__main__":
