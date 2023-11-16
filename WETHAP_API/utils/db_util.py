@@ -70,9 +70,8 @@ class tableManager(ABC):
             }
         elif isinstance(response, list):
             wrapped = [
-                {key: item}
+                {key: item for key, item in zip(self.COLUMN_INFO.keys(), record)}
                 for record in response
-                for key, item in zip(self.COLUMN_INFO.keys(), record)
             ]
         else:
             raise ValueError
