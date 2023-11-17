@@ -77,11 +77,11 @@ class tableManager(ABC):
             raise ValueError
         return wrapped
 
-    def insert(self):
+    def insert(self) -> bool:
         """レコードを追加"""
         raise NotImplementedError
 
-    def update(self):
+    def update(self) -> bool:
         """レコードを更新"""
         raise NotImplementedError
 

@@ -11,8 +11,8 @@ dotenv.load_dotenv()
 
 
 def post():
-    URL = f"http://solithv7247.duckdns.org{os.environ.get('PREFIX')}/addInfo"
-    URL = f"http://127.0.0.1:{os.environ.get('SERVER_PORT')}{os.environ.get('PREFIX')}/addInfo"
+    URL = f"http://solithv7247.duckdns.org{os.environ.get('PREFIX')}/addInfo/"
+    URL = f"http://127.0.0.1:{os.environ.get('SERVER_PORT')}{os.environ.get('PREFIX')}/addInfo/"
 
     postInfo = {
         "labID": "テスト研究室",
@@ -47,5 +47,5 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.get_event_loop().run_until_complete(main())
+    # asyncio.get_event_loop().run_until_complete(main())
     post()

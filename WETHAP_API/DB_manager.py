@@ -1,6 +1,6 @@
 import datetime
 from decimal import Decimal
-
+import psycopg2
 from utils.db_util import tableManager
 
 
@@ -44,7 +44,8 @@ class infosManager(tableManager):
                 pressure numeric,
                 weather text,
                 create_at timestamptz NOT NULL DEFAULT current_timestamp,
-                update_at timestamptz NOT NULL DEFAULT current_timestamp
+                update_at timestamptz NOT NULL DEFAULT current_timestamp,
+                UNIQUE (labID, date, numGen)
             );
             """
         )
@@ -59,7 +60,7 @@ class infosManager(tableManager):
         humidity: float,
         pressure: float,
         weather: str,
-    ) -> None:
+    ) -> bool:
         """レコードを追加
 
         Args:
@@ -71,16 +72,22 @@ class infosManager(tableManager):
             pressure (float): 気圧
             weather (str): 天気
         """
-        self.cursor.execute(
-            f"""
-            INSERT INTO {self.table} (
-                labID, date, numGen, temperature, humidity, pressure, weather
+        try:
+            self.cursor.execute(
+                f"""
+                INSERT INTO {self.table} (
+                    labID, date, numGen, temperature, humidity, pressure, weather
+                )
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """,
+                (labID, date, numGen, temperature, humidity, pressure, weather),
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-            """,
-            (labID, date, numGen, temperature, humidity, pressure, weather),
-        )
-        self.connection.commit()
+            self.connection.commit()
+        except psycopg2.errors.DatabaseError:
+            self.connection.rollback()
+            return False
+        else:
+            return True
 
     def update(
         self,
@@ -92,7 +99,7 @@ class infosManager(tableManager):
         humidity: float,
         pressure: float,
         weather: str,
-    ) -> None:
+    ) -> bool:
         """レコードを更新
 
         Args:
@@ -105,22 +112,28 @@ class infosManager(tableManager):
             pressure (float): 気圧
             weather (str): 天気
         """
-        self.cursor.execute(
-            f"""
-            UPDATE {self.table} SET
-            labID = %s,
-            date = %s,
-            numGen = %s,
-            temperature = %s,
-            humidity = %s,
-            pressure = %s,
-            weather = %s,
-            update_at = current_timestamp
-            WHERE id = %s
-            """,
-            (labID, date, numGen, temperature, humidity, pressure, weather, id),
-        )
-        self.connection.commit()
+        try:
+            self.cursor.execute(
+                f"""
+                UPDATE {self.table} SET
+                labID = %s,
+                date = %s,
+                numGen = %s,
+                temperature = %s,
+                humidity = %s,
+                pressure = %s,
+                weather = %s,
+                update_at = current_timestamp
+                WHERE id = %s
+                """,
+                (labID, date, numGen, temperature, humidity, pressure, weather, id),
+            )
+            self.connection.commit()
+        except psycopg2.errors.DatabaseError:
+            self.connection.rollback()
+            return False
+        else:
+            return True
 
     def select(self, labID: str, date: str, numGen: int) -> INFO_TABLE_TYPES:
         """条件に合うレコードを取得
@@ -137,12 +150,12 @@ class infosManager(tableManager):
             f"""
             SELECT * FROM {self.table}
             WHERE labID = %s and date = %s and numGen = %s
-            ORDER BY update_at
+            ORDER BY update_at desc
             """,
             (labID, date, numGen),
         )
-        response = self.cursor.fetchall()
-        return response[-1] if response else None
+        records = self.cursor.fetchall()
+        return records[0] if records else None
 
     def is_registered(self, labID: str) -> bool:
         """登録済みの研究室か
@@ -156,8 +169,8 @@ class infosManager(tableManager):
         self.cursor.execute(
             f"SELECT DISTINCT labID FROM {self.table} WHERE labID = %s", (labID,)
         )
-        response = self.cursor.fetchall()
-        return bool(response)
+        records = self.cursor.fetchall()
+        return bool(records)
 
     def registered_rooms(self) -> list[str]:
         """登録済みの研究室一覧
@@ -166,8 +179,8 @@ class infosManager(tableManager):
             list[str]: 登録済み研究室
         """
         self.cursor.execute(f"SELECT DISTINCT labID FROM {self.table}")
-        response = self.cursor.fetchall()
-        rooms = [room[0] for room in response]
+        records = self.cursor.fetchall()
+        rooms = [record[0] for record in records]
         return rooms
 
     def preview_data(
@@ -179,13 +192,14 @@ class infosManager(tableManager):
             list[INFO_TABLE_TYPES]: 全レコード
         """
         self.cursor.execute(f"SELECT * FROM {self.table} ORDER BY id")
-        response = self.cursor.fetchall()
-        return response
+        records = self.cursor.fetchall()
+        return records
 
 
 class senderManager(tableManager):
     COLUMN_INFO = {
-        "id": bytearray,
+        "id": int,
+        "uuid": str,
         "labID": str,
         "create_at": datetime.datetime,
         "update_at": datetime.datetime,
@@ -196,8 +210,9 @@ class senderManager(tableManager):
         self.cursor.execute(
             f"""
             CREATE TABLE IF NOT EXISTS {self.table} (
-                id bytea PRIMARY KEY,
-                labID text,
+                id serial PRIMARY KEY,
+                uuid text UNIQUE,
+                labID text UNIQUE,
                 create_at timestamptz NOT NULL DEFAULT current_timestamp,
                 update_at timestamptz NOT NULL DEFAULT current_timestamp
             );
@@ -205,24 +220,73 @@ class senderManager(tableManager):
         )
         self.connection.commit()
 
-    def get_labID(self, id: bytearray):
+    def insert(self, uuid: str, labID: str):
+        try:
+            self.cursor.execute(
+                f"""
+                INSERT INTO {self.table} (uuid, labID)
+                VALUES (%s, %s)
+                """,
+                (uuid, labID),
+            )
+        except psycopg2.errors.DatabaseError:
+            self.connection.rollback()
+            return False
+        else:
+            return True
+
+    def select(self, id: int = None, uuid: str = None, labID: str = None):
+        where = ([], [])
+        if id is not None:
+            where[0].append("id = %s")
+            where[1].append(id)
+        if uuid is not None:
+            where[0].append("uuid = %s")
+            where[1].append(uuid)
+        if labID is not None:
+            where[0].append("labID = %s")
+            where[1].append(labID)
+        if len(where[0]) <= 0:
+            raise ValueError
+        self.cursor.execute(
+            f"""
+            SELECT * FROM {self.table}
+            WHERE {' AND '.join(where[0])}
+            """,
+            (*where[1],),
+        )
+        record = self.cursor.fetchall()
+        return record[0] if record else None
+
+    def get_labID(self, id: str):
         """端末に割り当てられているlabIDを取得
 
         Args:
-            id (bytearray): 端末固有id
+            id (str): 端末固有id
         """
         self.cursor.execute(
-            f"""SELECT labID FROM {self.table} WHERE id = %s ORDER BY update_at""",
+            f"""SELECT labID FROM {self.table} WHERE id = %s""",
             (id,),
         )
         response = self.cursor.fetchall()
-        return response[-1] if response else None
+        return response[0] if response else None
 
     def get_all_labID(self):
         """端末に割り当てられているlabIDの一覧を取得"""
-        self.cursor.execute(f"""SELECT DISTINCT labID FROM {self.table}""")
+        self.cursor.execute(f"""SELECT labID FROM {self.table}""")
         response = self.cursor.fetchall()
-        return response[-1] if response else None
+        return response[0] if response else None
+
+    def change_labID(self, id: int, labID: str):
+        self.cursor.execute(
+            f"""
+            UPDATE {self.table} SET
+            labID = %s, update_at = current_timestamp
+            WHERE id = %s
+            """,
+            (labID, id),
+        )
+        self.connection.commit()
 
 
 if __name__ == "__main__":
@@ -239,6 +303,7 @@ if __name__ == "__main__":
         "port": os.environ.get("DB_PORT"),
     }
     infos_manager = infosManager(table="infos", **db_config)
+    infos_manager.init_table()
     # print(infos_manager.preview_data())
     # infos_manager.delete_table()
     # infos_manager.create_table()
@@ -249,5 +314,5 @@ if __name__ == "__main__":
 
     sender_manager = senderManager("sender", **db_config)
     sender_manager.init_table()
-    print(sender_manager.preview_data())
+    print(sender_manager.fetch_all())
     sender_manager.close()

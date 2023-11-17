@@ -1,12 +1,12 @@
 import asyncio
 import datetime
-import json
 import os
 
 import dotenv
+import psycopg2
 import uvicorn
-from DB_manager import infosManager
-from fastapi import FastAPI
+from DB_manager import infosManager, senderManager
+from fastapi import FastAPI, status, Response
 from fastapi.websockets import WebSocket, WebSocketDisconnect
 from fetchWeather import fetchWeather
 from pydantic import BaseModel
@@ -22,7 +22,7 @@ class Info(BaseModel):
     pressure: float
 
 
-FINISH_TIME = (
+FINISH_TIMES = (
     datetime.time(9, 25),
     datetime.time(10, 10),
     datetime.time(11, 10),
@@ -38,6 +38,7 @@ FINISH_TIME = (
 )
 
 dotenv.load_dotenv()
+prefix = os.environ.get("PREFIX")
 db_config = {
     "dbname": os.environ.get("DB_NAME"),
     "user": os.environ.get("DB_USER"),
@@ -45,34 +46,47 @@ db_config = {
     "host": os.environ.get("DB_HOST"),
     "port": os.environ.get("DB_PORT"),
 }
-prefix = os.environ.get("PREFIX")
 
 app = FastAPI()
-
 ws_manager = websocketManager()
 db_manager = infosManager(table="infos", **db_config)
+sender_db_manager = senderManager(table="senders", **db_config)
 
 
 def insert_data(data):
-    json_data = json.loads(data)
+    data
     db_manager.insert(
-        labID=json_data["labID"],
-        date=json_data.get("date", str(datetime.date.today())),
-        numGen=json_data["numGen"],
-        temperature=json_data["temperature"],
-        humidity=json_data["humidity"],
-        pressure=json_data["pressure"],
+        labID=data["labID"],
+        date=data.get("date", str(datetime.date.today())),
+        numGen=data["numGen"],
+        temperature=data["temperature"],
+        humidity=data["humidity"],
+        pressure=data["pressure"],
         weather=fetchWeather(),
     )
-    print(json_data)
+    print(data)
+
+
+def prepare(data):
+    if (record := sender_db_manager.select(uuid=data["uuid"])) is not None:
+        record = sender_db_manager.wrap_records(record)
+        return record["labID"]
+    else:
+        sender_db_manager.insert(uuid=data["uuid"], labID=data["labID"])
+        return data["labID"]
 
 
 @app.websocket(f"{prefix}/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await ws_manager.connect(websocket)
     try:
+        # data = {"uuid": str, "labID": str, (...)}
+        data = await websocket.receive_json()
+        labID = prepare(data)
+        await websocket.send_json({"labID": labID})
+
         while True:
-            data = await websocket.receive_text()
+            data = await websocket.receive_json()
             insert_data(data)
 
     except WebSocketDisconnect:
@@ -84,9 +98,10 @@ async def index():
     return {"status": "online"}
 
 
-@app.post(f"{prefix}/addInfo/")
-async def add_info(data: Info):
-    db_manager.insert(
+@app.post(f"{prefix}/addInfo/", status_code=status.HTTP_200_OK)
+async def add_info(data: Info, response: Response):
+    # try:
+    if db_manager.insert(
         labID=data.labID,
         # date=str(datetime.date.today()),
         date=data.date,
@@ -95,9 +110,13 @@ async def add_info(data: Info):
         humidity=data.humidity,
         pressure=data.pressure,
         weather=fetchWeather(),
-    )
-    print(data)
-    return {"status": "added"}
+    ):
+        print(data)
+        return {"status": "added"}
+    else:
+        print(data)
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {"status": "failed"}
 
 
 @app.get(f"{prefix}/isRegistered/")
@@ -162,7 +181,7 @@ async def start_app():
 
 
 async def main():
-    tasks = [run_at(FINISH_TIME), start_app()]
+    tasks = [run_at(FINISH_TIMES), start_app()]
     try:
         await asyncio.gather(*tasks)
     except asyncio.CancelledError:
