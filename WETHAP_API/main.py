@@ -3,7 +3,6 @@ import datetime
 import os
 
 import dotenv
-import psycopg2
 import uvicorn
 from DB_manager import infosManager, senderManager
 from fastapi import FastAPI, status, Response
@@ -170,9 +169,7 @@ async def run_at(schedule_times: list[datetime.time]):
 
 
 async def start_app():
-    uvicorn_config = uvicorn.Config(
-        app, host="0.0.0.0", port=int(os.environ.get("SERVER_PORT"))
-    )
+    uvicorn_config = uvicorn.Config(app, port=int(os.environ.get("SERVER_PORT")))
     server = uvicorn.Server(uvicorn_config)
     try:
         await server.serve()

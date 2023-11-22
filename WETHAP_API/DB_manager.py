@@ -46,7 +46,7 @@ class infosManager(tableManager):
                 create_at timestamptz NOT NULL DEFAULT current_timestamp,
                 update_at timestamptz NOT NULL DEFAULT current_timestamp,
                 UNIQUE (labID, date, numGen)
-            );
+            )
             """
         )
         self.connection.commit()
@@ -157,6 +157,16 @@ class infosManager(tableManager):
         records = self.cursor.fetchall()
         return records[0] if records else None
 
+    def remove(self, labID: str, date: str, numGen: int):
+        self.cursor.execute(
+            f"""
+            DELETE FROM {self.table}
+            WHERE labID = %s AND date = %s AND numGen = %s
+            """,
+            (labID, date, numGen),
+        )
+        self.connection.commit()
+
     def is_registered(self, labID: str) -> bool:
         """登録済みの研究室か
 
@@ -210,12 +220,12 @@ class senderManager(tableManager):
         self.cursor.execute(
             f"""
             CREATE TABLE IF NOT EXISTS {self.table} (
-                id serial PRIMARY KEY,
-                uuid text UNIQUE,
+                id serial PRIMARY KEY NOT NULL,
+                uuid text UNIQUE NOT NULL,
                 labID text UNIQUE,
                 create_at timestamptz NOT NULL DEFAULT current_timestamp,
                 update_at timestamptz NOT NULL DEFAULT current_timestamp
-            );
+            )
             """
         )
         self.connection.commit()
