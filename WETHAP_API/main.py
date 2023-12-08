@@ -39,11 +39,8 @@ FINISH_TIMES = (
 dotenv.load_dotenv()
 prefix = os.environ.get("PREFIX")
 db_config = {
-    "dbname": os.environ.get("DB_NAME"),
-    "user": os.environ.get("DB_USER"),
+    "conninfo": os.environ.get("DB_CONNINFO"),
     "password": os.environ.get("DB_PASSWORD"),
-    "host": os.environ.get("DB_HOST"),
-    "port": os.environ.get("DB_PORT"),
 }
 
 app = FastAPI()

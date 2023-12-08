@@ -1,6 +1,6 @@
 from abc import ABC
 
-import psycopg2
+import psycopg
 
 
 class tableManager(ABC):
@@ -9,11 +9,7 @@ class tableManager(ABC):
     def __init__(
         self,
         table: str,
-        dbname: str,
-        user: str,
-        password: str,
-        host: str,
-        port: int,
+        conninfo: str,
         **kwargs,
     ) -> None:
         """init
@@ -27,10 +23,8 @@ class tableManager(ABC):
             port (int): ポート番号
         """
         self.table = table
-        self.connection: psycopg2.extensions.connection = psycopg2.connect(
-            dbname=dbname, user=user, password=password, host=host, port=port, **kwargs
-        )
-        self.cursor: psycopg2.extensions.cursor = self.connection.cursor()
+        self.connection = psycopg.connect(conninfo=conninfo, **kwargs)
+        self.cursor = self.connection.cursor()
 
     def create_table(self):
         """テーブルを作成"""
@@ -64,7 +58,9 @@ class tableManager(ABC):
         Returns:
             list|tuple: 変換後のレコード
         """
-        if isinstance(response, tuple):
+        if response is None:
+            return None
+        elif isinstance(response, tuple):
             wrapped = {
                 key: item for key, item in zip(self.COLUMN_INFO.keys(), response)
             }
@@ -98,3 +94,6 @@ class tableManager(ABC):
         self.cursor.close()
         self.connection.commit()
         self.connection.close()
+
+    def __del__(self):
+        self.close()

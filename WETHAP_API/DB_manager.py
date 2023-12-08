@@ -1,6 +1,6 @@
 import datetime
 from decimal import Decimal
-import psycopg2
+import psycopg
 from utils.db_util import tableManager
 
 
@@ -83,7 +83,7 @@ class infosManager(tableManager):
                 (labID, date, numGen, temperature, humidity, pressure, weather),
             )
             self.connection.commit()
-        except psycopg2.errors.DatabaseError:
+        except psycopg.errors.DatabaseError:
             self.connection.rollback()
             return False
         else:
@@ -129,7 +129,7 @@ class infosManager(tableManager):
                 (labID, date, numGen, temperature, humidity, pressure, weather, id),
             )
             self.connection.commit()
-        except psycopg2.errors.DatabaseError:
+        except psycopg.errors.DatabaseError:
             self.connection.rollback()
             return False
         else:
@@ -239,7 +239,7 @@ class senderManager(tableManager):
                 """,
                 (uuid, labID),
             )
-        except psycopg2.errors.DatabaseError:
+        except psycopg.errors.DatabaseError:
             self.connection.rollback()
             return False
         else:
@@ -306,11 +306,8 @@ if __name__ == "__main__":
 
     dotenv.load_dotenv()
     db_config = {
-        "dbname": os.environ.get("DB_NAME"),
-        "user": os.environ.get("DB_USER"),
+        "conninfo": os.environ.get("DB_CONNINFO"),
         "password": os.environ.get("DB_PASSWORD"),
-        "host": os.environ.get("DB_HOST"),
-        "port": os.environ.get("DB_PORT"),
     }
     infos_manager = infosManager(table="infos", **db_config)
     infos_manager.init_table()
