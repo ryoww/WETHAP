@@ -154,8 +154,8 @@ class infosManager(tableManager):
             """,
             (labID, date, numGen),
         )
-        records = self.cursor.fetchall()
-        return records[0] if records else None
+        record = self.cursor.fetchone()
+        return record
 
     def remove(self, labID: str, date: str, numGen: int):
         self.cursor.execute(
@@ -179,8 +179,8 @@ class infosManager(tableManager):
         self.cursor.execute(
             f"SELECT DISTINCT labID FROM {self.table} WHERE labID = %s", (labID,)
         )
-        records = self.cursor.fetchall()
-        return bool(records)
+        record = self.cursor.fetchone()
+        return bool(record)
 
     def registered_rooms(self) -> list[str]:
         """登録済みの研究室一覧
@@ -265,8 +265,8 @@ class senderManager(tableManager):
             """,
             (*where[1],),
         )
-        record = self.cursor.fetchall()
-        return record[0] if record else None
+        record = self.cursor.fetchone()
+        return record
 
     def get_labID(self, id: str):
         """端末に割り当てられているlabIDを取得
@@ -278,14 +278,14 @@ class senderManager(tableManager):
             f"""SELECT labID FROM {self.table} WHERE id = %s""",
             (id,),
         )
-        response = self.cursor.fetchall()
-        return response[0] if response else None
+        record = self.cursor.fetchone()
+        return record
 
     def get_all_labID(self):
         """端末に割り当てられているlabIDの一覧を取得"""
         self.cursor.execute(f"""SELECT labID FROM {self.table}""")
-        response = self.cursor.fetchall()
-        return response[0] if response else None
+        record = self.cursor.fetchone()
+        return record
 
     def change_labID(self, id: int, labID: str):
         self.cursor.execute(
