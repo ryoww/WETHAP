@@ -1,25 +1,14 @@
 import asyncio
 import datetime
+import json
 import os
 
 import dotenv
 import uvicorn
-from DB_manager import infosManager, senderManager
-from fastapi import FastAPI, status, Response
-from fastapi.websockets import WebSocket, WebSocketDisconnect
-from fetchWeather import fetchWeather
-from pydantic import BaseModel
-from utils.ws_manager import websocketManager
-
-
-class Info(BaseModel):
-    labID: str
-    date: str | datetime.date = str(datetime.date.today())
-    numGen: int
-    temperature: float
-    humidity: float
-    pressure: float
-
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from managers import ws_manager
+from routers import http_router, ws_router
 
 FINISH_TIMES = (
     datetime.time(9, 25),
@@ -34,114 +23,36 @@ FINISH_TIMES = (
     datetime.time(17, 45),
     datetime.time(18, 45),
     datetime.time(19, 30),
+    datetime.time(10, 7),
+    datetime.time(10, 8),
+    datetime.time(10, 9),
 )
 
 dotenv.load_dotenv()
-prefix = os.environ.get("PREFIX")
-db_config = {
-    "conninfo": os.environ.get("DB_CONNINFO"),
-    "password": os.environ.get("DB_PASSWORD"),
-}
 
 app = FastAPI()
-ws_manager = websocketManager()
-db_manager = infosManager(table="infos", **db_config)
-sender_db_manager = senderManager(table="senders", **db_config)
+app.add_middleware(
+    CORSMiddleware,
+    # allow_origins=["*"],
+    allow_origin_regex="http://localhost:.*",
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+app.include_router(http_router.router)
+app.include_router(ws_router.router)
 
 
-def insert_data(data):
-    data
-    db_manager.insert(
-        labID=data["labID"],
-        date=data.get("date", str(datetime.date.today())),
-        numGen=data["numGen"],
-        temperature=data["temperature"],
-        humidity=data["humidity"],
-        pressure=data["pressure"],
-        weather=fetchWeather(),
-    )
-    print(data)
+def get_numGen():
+    now = datetime.datetime.now().time().replace(second=0, microsecond=0)
+    return FINISH_TIMES.index(now) + 1
 
 
-def prepare(data):
-    if (record := sender_db_manager.select(uuid=data["uuid"])) is not None:
-        record = sender_db_manager.wrap_records(record)
-        return record["labID"]
-    else:
-        sender_db_manager.insert(uuid=data["uuid"], labID=data["labID"])
-        return data["labID"]
-
-
-@app.websocket(f"{prefix}/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    await ws_manager.connect(websocket)
-    try:
-        # data = {"uuid": str, "labID": str, (...)}
-        data = await websocket.receive_json()
-        labID = prepare(data)
-        await websocket.send_json({"labID": labID})
-
-        while True:
-            data = await websocket.receive_json()
-            insert_data(data)
-
-    except WebSocketDisconnect:
-        ws_manager.disconnect(websocket)
-
-
-@app.get(f"{prefix}/")
-async def index():
-    return {"status": "online"}
-
-
-@app.post(f"{prefix}/addInfo/", status_code=status.HTTP_200_OK)
-async def add_info(data: Info, response: Response):
-    # try:
-    if db_manager.insert(
-        labID=data.labID,
-        # date=str(datetime.date.today()),
-        date=data.date,
-        numGen=data.numGen,
-        temperature=data.temperature,
-        humidity=data.humidity,
-        pressure=data.pressure,
-        weather=fetchWeather(),
-    ):
-        print(data)
-        return {"status": "added"}
-    else:
-        print(data)
-        response.status_code = status.HTTP_400_BAD_REQUEST
-        return {"status": "failed"}
-
-
-@app.get(f"{prefix}/isRegistered/")
-async def is_registered(labID: str):
-    response = db_manager.is_registered(labID)
-    return str(response)
-
-
-@app.get(f"{prefix}/registeredRooms/")
-async def registered_rooms():
-    response = db_manager.registered_rooms()
-    return response
-
-
-@app.get(f"{prefix}/previewData/")
-async def preview_data():
-    response = db_manager.preview_data()
-    return response
-
-
-@app.get(f"{prefix}/getInfo/")
-async def get_info(labID: str, date: str, numGen: int):
-    response = db_manager.select(labID=labID, date=date, numGen=numGen)
-    return response if response else "NoData"
-
-
-async def request_info():
-    print("request info")
-    await ws_manager.broadcast("request info")
+async def request_info(numGen=None):
+    numGen = get_numGen()
+    massage = {"massage": "request info", "numGen": numGen}
+    print(massage)
+    await ws_manager.broadcast(json.dumps(massage))
 
 
 async def run_at(schedule_times: list[datetime.time]):

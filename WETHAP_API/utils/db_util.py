@@ -1,11 +1,9 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 
 import psycopg
 
 
 class tableManager(ABC):
-    COLUMN_INFO = {}
-
     def __init__(
         self,
         table: str,
@@ -16,19 +14,31 @@ class tableManager(ABC):
 
         Args:
             table (str): テーブル名
-            dbname (str): DB名
-            user (str): ユーザ名
-            password (str): パスワード
-            host (str): ホスト名またはIPアドレス
-            port (int): ポート番号
+            conninfo (str): postgresql://...
+            **kwargs: 接続パラメータ
         """
         self.table = table
         self.connection = psycopg.connect(conninfo=conninfo, **kwargs)
         self.cursor = self.connection.cursor()
 
-    def create_table(self):
+    @property
+    @abstractmethod
+    def column_info(self) -> dict[str, type]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def create_table(self) -> None:
         """テーブルを作成"""
         raise NotImplementedError
+        self.cursor.execute(
+            f"""
+            CREATE TABLE IF NOT EXISTS {self.table} (
+                create_at timestamptz NOT NULL DEFAULT current_timestamp,
+                update_at timestamptz NOT NULL DEFAULT current_timestamp
+            )
+            """
+        )
+        self.connection.commit()
 
     def delete_table(self) -> None:
         """テーブルを削除"""
@@ -40,7 +50,7 @@ class tableManager(ABC):
         self.delete_table()
         self.create_table()
 
-    def fetch_all(self, wrap: bool = True):
+    def get_all(self, wrap: bool = True) -> list:
         """全レコードを取得"""
         self.cursor.execute(f"SELECT * FROM {self.table}")
         records = self.cursor.fetchall()
@@ -62,32 +72,81 @@ class tableManager(ABC):
             return None
         elif isinstance(response, tuple):
             wrapped = {
-                key: item for key, item in zip(self.COLUMN_INFO.keys(), response)
+                key: item for key, item in zip(self.column_info.keys(), response)
             }
         elif isinstance(response, list):
             wrapped = [
-                {key: item for key, item in zip(self.COLUMN_INFO.keys(), record)}
+                {key: item for key, item in zip(self.column_info.keys(), record)}
                 for record in response
             ]
         else:
             raise ValueError
         return wrapped
 
+    @abstractmethod
     def insert(self) -> bool:
         """レコードを追加"""
         raise NotImplementedError
+        try:
+            self.cursor.execute(
+                f"""
+                INSERT INTO {self.table} ( )
+                VALUES ( )
+                """,
+                (),
+            )
+            self.connection.commit()
+        except psycopg.errors.DatabaseError:
+            self.connection.rollback()
+            return False
+        else:
+            return True
 
+    @abstractmethod
     def update(self) -> bool:
         """レコードを更新"""
         raise NotImplementedError
+        try:
+            self.cursor.execute(
+                f"""
+                UPDATE {self.table} SET
+                update_at = current_timestamp
+                WHERE
+                """,
+                (),
+            )
+            self.connection.commit()
+        except psycopg.errors.DatabaseError:
+            self.connection.rollback()
+            return False
+        else:
+            return True
 
-    def select(self):
+    @abstractmethod
+    def select(self) -> tuple:
         """条件に合うレコードを取得"""
         raise NotImplementedError
+        self.cursor.execute(
+            f"""
+            SELECT * FROM {self.table}
+            WHERE
+            """,
+            (),
+        )
+        return self.cursor.fetchone()
 
-    def remove(self):
+    @abstractmethod
+    def remove(self) -> None:
         """条件に合うレコードを削除"""
         raise NotImplementedError
+        self.cursor.execute(
+            f"""
+            DELETE FROM {self.table}
+            WHERE
+            """,
+            (),
+        )
+        self.connection.commit()
 
     def close(self) -> None:
         """DBを保存し切断"""

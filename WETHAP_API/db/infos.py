@@ -1,22 +1,11 @@
 import datetime
 from decimal import Decimal
+
 import psycopg
 from utils.db_util import tableManager
 
 
 class infosManager(tableManager):
-    COLUMN_INFO = {
-        "id": int,
-        "labID": str,
-        "date": datetime.date,
-        "numGen": int,
-        "temperature": Decimal,
-        "humidity": Decimal,
-        "pressure": Decimal,
-        "weather": str,
-        "create_at": datetime.datetime,
-        "update_at": datetime.datetime,
-    }
     INFO_TABLE_TYPES = tuple[
         int,
         str,
@@ -30,23 +19,44 @@ class infosManager(tableManager):
         datetime.datetime,
     ]
 
+    @property
+    def column_info(self) -> dict[str, type]:
+        column_info = {
+            "id": int,
+            "labID": str,
+            "date": datetime.date,
+            "numGen": int,
+            "temperature": Decimal,
+            "humidity": Decimal,
+            "pressure": Decimal,
+            "weather": str,
+            "create_at": datetime.datetime,
+            "update_at": datetime.datetime,
+        }
+        return column_info
+
     def create_table(self) -> None:
         """WETHAP infos用のテーブルを作成"""
         self.cursor.execute(
             f"""
             CREATE TABLE IF NOT EXISTS {self.table} (
                 id serial PRIMARY KEY,
-                labID text,
-                date date,
+                labID text NOT NULL,
+                date date NOT NULL,
                 numGen integer,
-                temperature numeric,
-                humidity numeric,
-                pressure numeric,
-                weather text,
+                temperature numeric NOT NULL,
+                humidity numeric NOT NULL,
+                pressure numeric NOT NULL,
+                weather text NOT NULL,
                 create_at timestamptz NOT NULL DEFAULT current_timestamp,
-                update_at timestamptz NOT NULL DEFAULT current_timestamp,
-                UNIQUE (labID, date, numGen)
+                update_at timestamptz NOT NULL DEFAULT current_timestamp
             )
+            """
+        )
+        self.cursor.execute(
+            f"""
+            CREATE UNIQUE INDEX ON {self.table} (labID, date, numGen)
+            WHERE numGen IS NOT NULL
             """
         )
         self.connection.commit()
@@ -204,122 +214,3 @@ class infosManager(tableManager):
         self.cursor.execute(f"SELECT * FROM {self.table} ORDER BY id")
         records = self.cursor.fetchall()
         return records
-
-
-class senderManager(tableManager):
-    COLUMN_INFO = {
-        "id": int,
-        "uuid": str,
-        "labID": str,
-        "create_at": datetime.datetime,
-        "update_at": datetime.datetime,
-    }
-
-    def create_table(self) -> None:
-        """WETHAP sender用のtableを作成"""
-        self.cursor.execute(
-            f"""
-            CREATE TABLE IF NOT EXISTS {self.table} (
-                id serial PRIMARY KEY NOT NULL,
-                uuid text UNIQUE NOT NULL,
-                labID text UNIQUE,
-                create_at timestamptz NOT NULL DEFAULT current_timestamp,
-                update_at timestamptz NOT NULL DEFAULT current_timestamp
-            )
-            """
-        )
-        self.connection.commit()
-
-    def insert(self, uuid: str, labID: str):
-        try:
-            self.cursor.execute(
-                f"""
-                INSERT INTO {self.table} (uuid, labID)
-                VALUES (%s, %s)
-                """,
-                (uuid, labID),
-            )
-        except psycopg.errors.DatabaseError:
-            self.connection.rollback()
-            return False
-        else:
-            return True
-
-    def select(self, id: int = None, uuid: str = None, labID: str = None):
-        where = ([], [])
-        if id is not None:
-            where[0].append("id = %s")
-            where[1].append(id)
-        if uuid is not None:
-            where[0].append("uuid = %s")
-            where[1].append(uuid)
-        if labID is not None:
-            where[0].append("labID = %s")
-            where[1].append(labID)
-        if len(where[0]) <= 0:
-            raise ValueError
-        self.cursor.execute(
-            f"""
-            SELECT * FROM {self.table}
-            WHERE {' AND '.join(where[0])}
-            """,
-            (*where[1],),
-        )
-        record = self.cursor.fetchone()
-        return record
-
-    def get_labID(self, id: str):
-        """端末に割り当てられているlabIDを取得
-
-        Args:
-            id (str): 端末固有id
-        """
-        self.cursor.execute(
-            f"""SELECT labID FROM {self.table} WHERE id = %s""",
-            (id,),
-        )
-        record = self.cursor.fetchone()
-        return record
-
-    def get_all_labID(self):
-        """端末に割り当てられているlabIDの一覧を取得"""
-        self.cursor.execute(f"""SELECT labID FROM {self.table}""")
-        record = self.cursor.fetchone()
-        return record
-
-    def change_labID(self, id: int, labID: str):
-        self.cursor.execute(
-            f"""
-            UPDATE {self.table} SET
-            labID = %s, update_at = current_timestamp
-            WHERE id = %s
-            """,
-            (labID, id),
-        )
-        self.connection.commit()
-
-
-if __name__ == "__main__":
-    import os
-
-    import dotenv
-
-    dotenv.load_dotenv()
-    db_config = {
-        "conninfo": os.environ.get("DB_CONNINFO"),
-        "password": os.environ.get("DB_PASSWORD"),
-    }
-    infos_manager = infosManager(table="infos", **db_config)
-    infos_manager.init_table()
-    # print(infos_manager.preview_data())
-    # infos_manager.delete_table()
-    # infos_manager.create_table()
-    # infos_manager.insert("テスト", str(datetime.date.today()), 0.0, 0.0, 0.0, 0.0, "晴れ")
-    # infos_manager.update(10, "更新", str(datetime.date.today()), 1.0, 1.0, 1.0, 1.0, "雨")
-    print(infos_manager.preview_data())
-    infos_manager.close()
-
-    sender_manager = senderManager("sender", **db_config)
-    sender_manager.init_table()
-    print(sender_manager.fetch_all())
-    sender_manager.close()
