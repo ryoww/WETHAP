@@ -55,5 +55,22 @@ async def preview_data():
 
 @router.get("/getInfo")
 async def get_info(labID: str, date: str, numGen: int):
+    return_keys = (
+        "labID",
+        "date",
+        "numGen",
+        "temperature",
+        "humidity",
+        "pressure",
+        "weather",
+    )
     response = infos_manager.select(labID=labID, date=date, numGen=numGen)
+    response = [
+        tuple(
+            item
+            for item, key in zip(record, infos_manager.column_info.keys())
+            if key in return_keys
+        )
+        for record in response
+    ]
     return response if response else "NoData"
