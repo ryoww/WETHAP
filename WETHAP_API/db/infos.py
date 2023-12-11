@@ -158,7 +158,8 @@ class infosManager(tableManager):
         """
         self.cursor.execute(
             f"""
-            SELECT * FROM {self.table}
+            SELECT labID, date, numGen, temperature, humidity, pressure, weather
+            FROM {self.table}
             WHERE labID = %s and date = %s and numGen = %s
             ORDER BY update_at desc
             """,
@@ -211,6 +212,11 @@ class infosManager(tableManager):
         Returns:
             list[INFO_TABLE_TYPES]: 全レコード
         """
-        self.cursor.execute(f"SELECT * FROM {self.table} ORDER BY id")
+        self.cursor.execute(
+            f"""
+            SELECT labID, date, numGen, temperature, humidity, pressure, weather
+            FROM {self.table} ORDER BY id
+            """
+        )
         records = self.cursor.fetchall()
         return records
