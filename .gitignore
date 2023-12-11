@@ -5,3 +5,4 @@ nohup.out
 __pycache__
 .env
 env.py
+*.service
