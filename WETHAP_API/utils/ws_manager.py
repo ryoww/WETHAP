@@ -45,7 +45,6 @@ class websocketManager:
     async def send_request_info(self, labID: str):
         for ws in self.active_connections:
             if self.connection_infos[ws]["labID"] == labID:
-                # await ws.send_json({"massage": "requestInfo"})
-                await self.send_message(ws, {"massage": "requestInfo"})
+                await ws.send_json({"massage": "request info"})
 
                 print("send request")

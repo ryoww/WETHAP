@@ -1,7 +1,6 @@
 import datetime
 import os
 import dotenv
-import asyncio
 
 from fastapi import APIRouter
 from fastapi.websockets import WebSocket, WebSocketDisconnect
@@ -60,7 +59,7 @@ async def ping_pong(websocket: WebSocket):
     await ws_manager.connect(websocket)
     try:
         while True:
-            r = await websocket.receive_text()
-            await websocket.send_text(r)
+            message = await websocket.receive_text()
+            await websocket.send_text(message)
     except WebSocketDisconnect:
         ws_manager.disconnect(websocket)
