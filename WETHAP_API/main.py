@@ -23,9 +23,6 @@ FINISH_TIMES = (
     datetime.time(17, 45),
     datetime.time(18, 45),
     datetime.time(19, 30),
-    datetime.time(10, 7),
-    datetime.time(10, 8),
-    datetime.time(10, 9),
 )
 
 dotenv.load_dotenv()
@@ -34,7 +31,6 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    # allow_origin_regex="http://localhost:.*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -88,7 +84,7 @@ async def start_app():
 
 
 async def main():
-    tasks = [run_at(FINISH_TIMES), start_app()]
+    tasks = [start_app(), run_at(FINISH_TIMES)]
     try:
         await asyncio.gather(*tasks)
     except asyncio.CancelledError:

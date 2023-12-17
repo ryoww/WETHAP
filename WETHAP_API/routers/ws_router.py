@@ -1,6 +1,7 @@
 import datetime
 import os
 import dotenv
+import asyncio
 
 from fastapi import APIRouter
 from fastapi.websockets import WebSocket, WebSocketDisconnect
@@ -27,7 +28,14 @@ async def websocket_endpoint(websocket: WebSocket):
     try:
         # NOTE: data = {"uuid": str, "labID": str, (...)}
         data = await websocket.receive_json()
+        print(data)
+        if not (data.get("uuid") and data.get("labID")):
+            print(f"disconnect ({data})")
+            await websocket.close(1007)
+            ws_manager.disconnect(websocket)
+            return
         labID = prepare(data)
+        ws_manager.update_info(websocket, data)
         await websocket.send_json({"labID": labID})
 
         while True:
@@ -43,5 +51,16 @@ async def websocket_endpoint(websocket: WebSocket):
             )
             print(f"status: {result}, data: {data}")
 
+    except WebSocketDisconnect:
+        ws_manager.disconnect(websocket)
+
+
+@router.websocket("/PingPong")
+async def ping_pong(websocket: WebSocket):
+    await ws_manager.connect(websocket)
+    try:
+        while True:
+            r = await websocket.receive_text()
+            await websocket.send_text(r)
     except WebSocketDisconnect:
         ws_manager.disconnect(websocket)
