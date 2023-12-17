@@ -11,7 +11,9 @@ class DisplayManager:
         height (int, optional): ssd1306デバイスの縦ピクセル数
     """
 
-    def __init__(self, i2c: I2C, margin: int = 3, width: int = 128, height: int = 64) -> None:
+    def __init__(
+        self, i2c: I2C, margin: int = 3, width: int = 128, height: int = 64
+    ) -> None:
         self.grid: int = 8
         self.width: int = width
         self.height: int = height
@@ -19,10 +21,8 @@ class DisplayManager:
         self.line_len: int = self.width // self.grid
         self.current: int = 0
         try:
-            self.display = ssd1306.SSD1306_I2C(
-                self.width, self.height, i2c
-            )
-        except:
+            self.display = ssd1306.SSD1306_I2C(self.width, self.height, i2c)
+        except Exception:
             self.display = None
             print("ssd1306 not connect")
         else:
@@ -48,11 +48,15 @@ class DisplayManager:
                 self.display.fill(0)
                 self.current = 0
             write = row if row else self.current
-            self.display.text(text, (self.width - len(text) * self.grid) // 2, write * (self.grid + self.margin))
+            self.display.text(
+                text,
+                (self.width - len(text) * self.grid) // 2,
+                write * (self.grid + self.margin),
+            )
             self.current = write + 1
         return self
 
-    def multi_text(self, *texts: list[str]):
+    def multi_text(self, *texts: list[str], lines: list[int] = []):
         """複数行を中央揃えで表示
         Args:
             (str): 表示するテキストを入力 複数入力可
@@ -60,12 +64,37 @@ class DisplayManager:
         if self.display:
             self.display.fill(0)
             if len(texts) % 2 == 0:
-                self.current = (6 - len(texts)) // 2
-                [self.add_text(text) for text in texts]
+                self.current = (
+                    (self.height + self.margin) // (self.grid + self.margin)
+                    - len(texts)
+                ) // 2
+                if 0 in lines:
+                    self.line()
+                for i, text in enumerate(texts):
+                    self.add_text(text)
+                    if i + 1 in lines:
+                        self.line()
             else:
                 char = self.grid + self.margin
                 pos = ((self.height + char) - char * len(texts)) // 2
-                [self.display.text(text, (self.width - len(text) * self.grid) // 2, pos + char * i) for i, text in enumerate(texts)]
+                if 0 in lines:
+                    self.display.hline(
+                        0,
+                        pos - self.margin + (self.margin // 2) - 1,
+                        self.width,
+                        1,
+                    )
+                for i, text in enumerate(texts):
+                    self.display.text(
+                        text, (self.width - len(text) * self.grid) // 2, pos + char * i
+                    )
+                    if i + 1 in lines:
+                        self.display.hline(
+                            0,
+                            (pos + char * i) + self.grid + (self.margin // 2) - 1,
+                            self.width,
+                            1,
+                        )
             self.display.show()
             self.current = 0
         return self
@@ -77,7 +106,12 @@ class DisplayManager:
         """
         if self.display:
             text = str(text)
-            self.multi_text(*[text[i : i + self.line_len] for i in range(0, len(text), self.line_len)])
+            self.multi_text(
+                *[
+                    text[i : i + self.line_len]
+                    for i in range(0, len(text), self.line_len)
+                ]
+            )
         return self
 
     def line(self, row: int = None):
@@ -87,7 +121,14 @@ class DisplayManager:
         """
         if self.display:
             write = row if row else self.current - 1
-            self.display.hline(0, (write + 1) * (self.grid + self.margin // 2), self.width, 1)
+            if write < 0:
+                return self
+            self.display.hline(
+                0,
+                (write + 1) * self.grid + write * self.margin + (self.margin // 2) - 1,
+                self.width,
+                1,
+            )
         return self
 
     def show(self, new: bool = True):
