@@ -28,9 +28,13 @@ class DisplayManager:
         else:
             print("ssd1306 connected")
 
+    @property
+    def status(self):
+        return self.display is not None
+
     def clear(self):
         """無表示化"""
-        if self.display:
+        if self.status:
             self.current = 0
             self.display.fill(0)
             self.display.show()
@@ -43,7 +47,7 @@ class DisplayManager:
             row (int, optional): 表示行を指定 未指定で次の行に追加
             new (bool, optional): Trueで新規 Falseで追加モード
         """
-        if self.display:
+        if self.status:
             if new:
                 self.display.fill(0)
                 self.current = 0
@@ -61,7 +65,7 @@ class DisplayManager:
         Args:
             (str): 表示するテキストを入力 複数入力可
         """
-        if self.display:
+        if self.status:
             self.display.fill(0)
             if len(texts) % 2 == 0:
                 self.current = (
@@ -104,7 +108,7 @@ class DisplayManager:
         Args:
             text (str like): 表示するテキストを入力
         """
-        if self.display:
+        if self.status:
             text = str(text)
             self.multi_text(
                 *[
@@ -119,7 +123,7 @@ class DisplayManager:
         Args:
             row (int, optional): 表示行を指定 未指定で次の行に追加
         """
-        if self.display:
+        if self.status:
             write = row if row else self.current - 1
             if write < 0:
                 return self
@@ -136,7 +140,7 @@ class DisplayManager:
         Args:
             new (bool, optional): Trueで描画後現在行を初期化 Falseで描画後現在行を初期化しない
         """
-        if self.display:
+        if self.status:
             if new:
                 self.current = 0
             self.display.show()

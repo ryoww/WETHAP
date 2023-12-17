@@ -19,7 +19,7 @@ master = Sender(config=config, led=led, i2c=i2c, temp_adj=temp_adj, humid_adj=hu
 async def init():
     async with master.lock:
         master.display.add_text("WETHAP", new=True).line()
-        if master.display.display:
+        if master.display.status:
             master.display.display.rect(5, 20, 118, 35, 1)
         master.display.add_text("Hello World!", 3).show()
         await asyncio.sleep(1)
@@ -39,6 +39,8 @@ async def send_info_loop():
             continue
         data = json.loads(data)
         print(data)
+        if data.get("message") != "request info":
+            continue
         message = {"labID": master.labID}
         message.update(master.get_info())
         if data.get("numGen") is not None:
@@ -69,20 +71,20 @@ async def wifi_connection_loop():
             await master.wifi_connect()
             if not master.wifi.isconnected():
                 await asyncio.sleep_ms(config.wifi_delay)
+            else:
+                master.led.on()
         await asyncio.sleep(1)
 
 
 async def update_time_loop():
-    while not master.wifi.isconnected():
-        await asyncio.sleep_ms(config.wifi_delay)
-    master.update_time()
     while True:
         now = master.now()
         wait_time = (60 - now[5]) * 60 + (60 - now[6])
         await asyncio.sleep(wait_time)
         while not master.wifi.isconnected():
             await asyncio.sleep_ms(config.wifi_delay)
-        master.update_time()
+        async with master.lock:
+            master.update_time()
 
 
 async def display_info_loop():
@@ -131,13 +133,10 @@ async def main_loop():
 
 
 async def main():
-    tasks = [
-        main_loop(),
-        wifi_connection_loop(),
-        update_time_loop(),
-        display_info_loop(),
-    ]
+    tasks = [main_loop(), wifi_connection_loop()]
     await init()
+    if master.display.status:
+        tasks += [update_time_loop(), display_info_loop()]
     await asyncio.gather(*tasks)
 
 
