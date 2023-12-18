@@ -29,9 +29,9 @@ class Config:
         self.wifi_attempts = env.ATTEMPTS
         self.wifi_delay = env.WIFI_DELAY
 
-        self.api_server = env.WS_URL
-        self.time_api_server = env.TIME_URL
-        self.ntp_server = env.NTP_URL
+        self.api_server = env.API_SERVER
+        self.time_api_server = env.TIME_SERVER
+        self.ntp_server = env.NTP_SERVER
 
         self.socket_delay = env.SOCKET_DELAY
 
