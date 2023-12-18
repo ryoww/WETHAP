@@ -108,12 +108,11 @@ async def main_loop():
     while True:
         gc.collect()
         try:
+            master.led.off()
             print("Handshaking...")
             if not await master.ws.handshake(config.api_server):
                 raise Exception("Handshake error.")
             print("...handshaked.")
-
-            master.led.on()
 
             await master.ws.send(
                 json.dumps({"uuid": master.machine_id, "labID": master.labID})
@@ -123,6 +122,7 @@ async def main_loop():
             )
             init_info = await master.ws.recv()
             master.labID = json.loads(init_info)["labID"]
+            master.led.on()
             print(f"my labID: {master.labID}, received info: {init_info}")
             await send_info_loop()
 
