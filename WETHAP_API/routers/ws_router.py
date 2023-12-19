@@ -32,7 +32,6 @@ async def websocket_endpoint(websocket: WebSocket):
     try:
         # NOTE: data = {"uuid": str, "labID": str, (...)}
         data = await websocket.receive_json()
-        print(data)
         if not (data.get("uuid") and data.get("labID")):
             print(f"disconnect ({data})")
             await websocket.close(1007)
@@ -40,6 +39,7 @@ async def websocket_endpoint(websocket: WebSocket):
             return
         labID = prepare(data)
         ws_manager.update_info(websocket, data)
+        print(f"connect {labID}")
         await websocket.send_json({"labID": labID})
 
         while True:
