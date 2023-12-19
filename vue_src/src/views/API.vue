@@ -65,7 +65,7 @@ export default {
             //     .catch(error => {
             //         console.log(error);
             //     });
-            axios.get('https://solithv7247.duckdns.org/WETHAP/api/previewData')
+            axios.get('https://api.solithv7247.duckdns.org/WETHAP/previewData')
                 .then(response => {
                     this.items = response.data;
                     this.isLoading = false
@@ -81,7 +81,7 @@ export default {
             //     .catch(error => {
             //         console.log(error);
             //     });
-            axios.get('https://solithv7247.duckdns.org/WETHAP/api/registeredRooms')
+            axios.get('https://api.solithv7247.duckdns.org/WETHAP/registeredRooms')
                 .then(response => {
                     this.rooms = response.data;
                     this.isLoading = false
