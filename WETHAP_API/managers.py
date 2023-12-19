@@ -3,7 +3,7 @@ import os
 import dotenv
 from db.infos import infosManager
 from db.sender import senderManager
-from utils.ws_manager import websocketManager
+from utils.ws_manager import senderWebsocketManager
 
 dotenv.load_dotenv()
 
@@ -12,6 +12,6 @@ db_config = {
     "password": os.environ.get("DB_PASSWORD"),
 }
 
-ws_manager = websocketManager()
+ws_manager = senderWebsocketManager()
 infos_manager = infosManager(table="infos", **db_config)
 sender_manager = senderManager(table="senders", **db_config)

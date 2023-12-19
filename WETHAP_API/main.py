@@ -72,6 +72,12 @@ async def run_at(schedule_times: list[datetime.time]):
         await request_info()
 
 
+async def keep_connection():
+    while True:
+        await asyncio.sleep(5 * 60)
+        ws_manager.broadcast({"message", "keep connection"})
+
+
 async def start_app():
     uvicorn_config = uvicorn.Config(
         app, host="0.0.0.0", port=int(os.environ.get("SERVER_PORT"))
@@ -84,7 +90,7 @@ async def start_app():
 
 
 async def main():
-    tasks = [start_app(), run_at(FINISH_TIMES)]
+    tasks = [start_app(), run_at(FINISH_TIMES), keep_connection()]
     try:
         await asyncio.gather(*tasks)
     except asyncio.CancelledError:
