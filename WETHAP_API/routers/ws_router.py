@@ -13,8 +13,7 @@ router = APIRouter(prefix=prefix)
 
 
 def prepare(data):
-    if (record := sender_manager.select(uuid=data["uuid"])) is not None:
-        record = sender_manager.wrap_records(record)
+    if (record := sender_manager.select(uuid=data["uuid"], wrap=True)) is not None:
         return record["labID"]
     elif data["labID"] not in sender_manager.get_all_labID():
         sender_manager.insert(uuid=data["uuid"], labID=data["labID"])

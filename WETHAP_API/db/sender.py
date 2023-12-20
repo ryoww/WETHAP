@@ -74,7 +74,9 @@ class senderManager(tableManager):
         )
         self.connection.commit()
 
-    def select(self, id: int = None, uuid: str = None, labID: str = None):
+    def select(
+        self, id: int = None, uuid: str = None, labID: str = None, wrap: bool = False
+    ):
         where = ([], [])
         if id is not None:
             where[0].append("id = %s")
@@ -94,7 +96,10 @@ class senderManager(tableManager):
             """,
             (*where[1],),
         )
-        record = self.cursor.fetchone()
+        if wrap:
+            record = self.dict_cursor.fetchone()
+        else:
+            record = self.cursor.fetchone()
         return record
 
     def get_labID(self, id: str):
