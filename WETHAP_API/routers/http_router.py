@@ -5,7 +5,7 @@ from fastapi import APIRouter, Response, status
 from fetchWeather import fetchWeather
 from managers import infos_manager, ws_manager
 
-from routers.router_depends import Info
+from routers.router_depends import Info, requestInfo
 
 dotenv.load_dotenv()
 prefix = os.environ.get("PREFIX")
@@ -21,9 +21,9 @@ async def index():
 async def add_info(info: Info, response: Response):
     print(f"addInfo request: {info}")
     if infos_manager.insert(
-        lab_id=info.lab_id,
+        lab_id=info.labID,
         date=info.date,
-        num_gen=info.num_gen,
+        num_gen=info.numGen,
         temperature=info.temperature,
         humidity=info.humidity,
         pressure=info.pressure,
@@ -36,8 +36,8 @@ async def add_info(info: Info, response: Response):
 
 
 @router.get("/isRegistered")
-async def is_registered(lab_id: str):
-    response = infos_manager.is_registered(lab_id)
+async def is_registered(labID: str):
+    response = infos_manager.is_registered(labID)
     return str(response)
 
 
@@ -60,8 +60,8 @@ async def preview_raw_data():
 
 
 @router.get("/getInfo")
-async def get_info(lab_id: str, date: str, num_gen: int):
-    response = infos_manager.select(lab_id=lab_id, date=date, num_gen=num_gen)
+async def get_info(labID: str, date: str, numGen: int):
+    response = infos_manager.select(lab_id=labID, date=date, num_gen=numGen)
     return response if response else "NoData"
 
 
@@ -77,10 +77,10 @@ async def active_rooms():
 
 
 @router.post("/requestInfo", status_code=status.HTTP_200_OK)
-async def request_info(lab_id: str, response: Response):
-    print(f"receive request {lab_id}")
-    if lab_id in ws_manager.active_rooms:
-        await ws_manager.send_request_info(lab_id)
+async def request_info(request: requestInfo, response: Response):
+    print(f"receive request {request.labID}")
+    if request.labID in ws_manager.active_rooms:
+        await ws_manager.send_request_info(request.labID)
         return {"status": "request sended"}
     else:
         response.status_code = status.HTTP_400_BAD_REQUEST

@@ -10,3 +10,7 @@ class Info(BaseModel):
     temperature: float
     humidity: float
     pressure: float
+
+
+class requestInfo(BaseModel):
+    labID: str
