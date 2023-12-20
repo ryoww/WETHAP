@@ -11,5 +11,5 @@ print(infos_manager.preview_data())
 
 
 # sender_manager.init_table()
-sender_manager.update(id=1, labID="テスト研究室")
+sender_manager.update(before_labID="T4教室", after_labID="高野家")
 print(sender_manager.get_all())

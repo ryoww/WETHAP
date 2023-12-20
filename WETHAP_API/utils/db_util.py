@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
 import psycopg
+from psycopg.rows import dict_row
 
 
 class tableManager(ABC):
@@ -20,6 +21,7 @@ class tableManager(ABC):
         self.table = table
         self.connection = psycopg.connect(conninfo=conninfo, **kwargs)
         self.cursor = self.connection.cursor()
+        self.dict_cursor = self.connection.cursor(row_factory=dict_row)
 
     @property
     @abstractmethod

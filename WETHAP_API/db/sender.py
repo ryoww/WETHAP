@@ -46,16 +46,16 @@ class senderManager(tableManager):
             self.connection.commit()
             return True
 
-    def update(self, id: int, labID: str):
+    def update(self, before_labID: str, after_labID: str):
         try:
             self.cursor.execute(
                 f"""
                 UPDATE {self.table} SET
                 labID = %s,
                 update_at = current_timestamp
-                WHERE id = %s
+                WHERE labID = %s
                 """,
-                (labID, id),
+                (after_labID, before_labID),
             )
             self.connection.commit()
         except psycopg.errors.DatabaseError:
