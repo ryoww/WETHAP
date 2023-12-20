@@ -10,7 +10,7 @@ class senderManager(tableManager):
         column_info = {
             "id": int,
             "uuid": str,
-            "labID": str,
+            "lab_id": str,
             "create_at": datetime.datetime,
             "update_at": datetime.datetime,
         }
@@ -22,7 +22,7 @@ class senderManager(tableManager):
             CREATE TABLE IF NOT EXISTS {self.table} (
                 id serial PRIMARY KEY NOT NULL,
                 uuid text UNIQUE NOT NULL,
-                labID text UNIQUE,
+                lab_id text UNIQUE,
                 create_at timestamptz NOT NULL DEFAULT current_timestamp,
                 update_at timestamptz NOT NULL DEFAULT current_timestamp
             )
@@ -30,14 +30,14 @@ class senderManager(tableManager):
         )
         self.connection.commit()
 
-    def insert(self, uuid: str, labID: str):
+    def insert(self, uuid: str, lab_id: str):
         try:
             self.cursor.execute(
                 f"""
-                INSERT INTO {self.table} (uuid, labID)
+                INSERT INTO {self.table} (uuid, lab_id)
                 VALUES (%s, %s)
                 """,
-                (uuid, labID),
+                (uuid, lab_id),
             )
         except psycopg.errors.DatabaseError:
             self.connection.rollback()
@@ -46,16 +46,16 @@ class senderManager(tableManager):
             self.connection.commit()
             return True
 
-    def update(self, before_labID: str, after_labID: str):
+    def update(self, id: int, after_lab_id: str):
         try:
             self.cursor.execute(
                 f"""
                 UPDATE {self.table} SET
-                labID = %s,
+                lab_id = %s,
                 update_at = current_timestamp
-                WHERE labID = %s
+                WHERE id = %s
                 """,
-                (after_labID, before_labID),
+                (after_lab_id, id),
             )
             self.connection.commit()
         except psycopg.errors.DatabaseError:
@@ -75,60 +75,78 @@ class senderManager(tableManager):
         self.connection.commit()
 
     def select(
-        self, id: int = None, uuid: str = None, labID: str = None, wrap: bool = False
+        self, id: int = None, uuid: str = None, lab_id: str = None, wrap: bool = False
     ):
-        where = ([], [])
+        input_query = []
+        input_params = []
         if id is not None:
-            where[0].append("id = %s")
-            where[1].append(id)
+            input_query.append("id = %s")
+            input_params.append(id)
         if uuid is not None:
-            where[0].append("uuid = %s")
-            where[1].append(uuid)
-        if labID is not None:
-            where[0].append("labID = %s")
-            where[1].append(labID)
-        if len(where[0]) <= 0:
+            input_query.append("uuid = %s")
+            input_params.append(uuid)
+        if lab_id is not None:
+            input_query.append("lab_id = %s")
+            input_params.append(lab_id)
+        if len(input_query) <= 0:
             raise ValueError
-        self.cursor.execute(
-            f"""
-            SELECT * FROM {self.table}
-            WHERE {' AND '.join(where[0])}
-            """,
-            (*where[1],),
-        )
+        query = f"""
+                SELECT * FROM {self.table}
+                WHERE {' AND '.join(input_query)}
+                """
         if wrap:
+            self.dict_cursor.execute(query, input_params)
             record = self.dict_cursor.fetchone()
         else:
+            self.cursor.execute(query, input_params)
             record = self.cursor.fetchone()
         return record
 
-    def get_labID(self, id: str):
-        """端末に割り当てられているlabIDを取得
+    def get_lab_id(self, id: str):
+        """端末に割り当てられているlab_idを取得
 
         Args:
             id (str): 端末固有id
         """
         self.cursor.execute(
-            f"""SELECT labID FROM {self.table} WHERE id = %s""",
+            f"""SELECT lab_id FROM {self.table} WHERE id = %s""",
             (id,),
         )
         record = self.cursor.fetchone()
         return record
 
-    def get_all_labID(self):
-        """端末に割り当てられているlabIDの一覧を取得"""
-        self.cursor.execute(f"""SELECT labID FROM {self.table}""")
+    def get_all_lab_id(self):
+        """端末に割り当てられているlab_idの一覧を取得"""
+        self.cursor.execute(f"""SELECT lab_id FROM {self.table}""")
         records = self.cursor.fetchall()
-        labIDs = [record[0] for record in records]
-        return labIDs
+        lab_ids = [record[0] for record in records]
+        return lab_ids
 
-    def change_labID(self, id: int, labID: str):
-        self.cursor.execute(
-            f"""
+    def change_lab_id(
+        self, after_lab_id: str, id: int = None, before_lab_id: str = None
+    ):
+        if id is None != before_lab_id is None:
+            raise ValueError("need to input either id or before_lab_id")
+        if id is None:
+            query = f"""
             UPDATE {self.table} SET
-            labID = %s, update_at = current_timestamp
+            lab_id = %s, update_at = current_timestamp
+            WHERE lab_id = %s
+            """
+            params = (after_lab_id, before_lab_id)
+        else:
+            query = f"""
+            UPDATE {self.table} SET
+            lab_id = %s, update_at = current_timestamp
             WHERE id = %s
-            """,
-            (labID, id),
-        )
-        self.connection.commit()
+            """
+            params = (after_lab_id, id)
+
+        try:
+            self.cursor.execute(query, params)
+            self.connection.commit()
+        except psycopg.errors.DatabaseError:
+            self.connection.rollback()
+            return False
+        else:
+            return True

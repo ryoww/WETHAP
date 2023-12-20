@@ -25,9 +25,9 @@ class infosManager(tableManager):
             f"""
             CREATE TABLE IF NOT EXISTS {self.table} (
                 id serial PRIMARY KEY,
-                labID text NOT NULL,
+                lab_id text NOT NULL,
                 date date NOT NULL,
-                numGen integer,
+                num_gen integer,
                 temperature numeric NOT NULL,
                 humidity numeric NOT NULL,
                 pressure numeric NOT NULL,
@@ -39,17 +39,17 @@ class infosManager(tableManager):
         )
         self.cursor.execute(
             f"""
-            CREATE UNIQUE INDEX ON {self.table} (labID, date, numGen)
-            WHERE numGen IS NOT NULL
+            CREATE UNIQUE INDEX ON {self.table} (lab_id, date, num_gen)
+            WHERE num_gen IS NOT NULL
             """
         )
         self.connection.commit()
 
     def insert(
         self,
-        labID: str,
+        lab_id: str,
         date: str,
-        numGen: int,
+        num_gen: int,
         temperature: float,
         humidity: float,
         pressure: float,
@@ -58,9 +58,9 @@ class infosManager(tableManager):
         """レコードを追加
 
         Args:
-            labID (str): 研究室名
+            lab_id (str): 研究室名
             date (str): 日付 (YYYY-MM-DD形式)
-            numGen (int): 時限
+            num_gen (int): 時限
             temperature (float): 温度
             humidity (float): 湿度
             pressure (float): 気圧
@@ -70,11 +70,11 @@ class infosManager(tableManager):
             self.cursor.execute(
                 f"""
                 INSERT INTO {self.table} (
-                    labID, date, numGen, temperature, humidity, pressure, weather
+                    lab_id, date, num_gen, temperature, humidity, pressure, weather
                 )
                 VALUES (%s, %s, %s, %s, %s, %s, %s)
                 """,
-                (labID, date, numGen, temperature, humidity, pressure, weather),
+                (lab_id, date, num_gen, temperature, humidity, pressure, weather),
             )
             self.connection.commit()
         except psycopg.errors.DatabaseError:
@@ -86,9 +86,9 @@ class infosManager(tableManager):
     def update(
         self,
         id: int,
-        labID: str,
+        lab_id: str,
         date: str,
-        numGen: int,
+        num_gen: int,
         temperature: float,
         humidity: float,
         pressure: float,
@@ -98,9 +98,9 @@ class infosManager(tableManager):
 
         Args:
             id (int): 変更したいレコードのid
-            labID (str): 研究室名
+            lab_id (str): 研究室名
             date (str): 日付 (YYYY-MM-DD形式)
-            numGen (int): 時限
+            num_gen (int): 時限
             temperature (float): 温度
             humidity (float): 湿度
             pressure (float): 気圧
@@ -110,9 +110,9 @@ class infosManager(tableManager):
             self.cursor.execute(
                 f"""
                 UPDATE {self.table} SET
-                labID = %s,
+                lab_id = %s,
                 date = %s,
-                numGen = %s,
+                num_gen = %s,
                 temperature = %s,
                 humidity = %s,
                 pressure = %s,
@@ -120,7 +120,7 @@ class infosManager(tableManager):
                 update_at = current_timestamp
                 WHERE id = %s
                 """,
-                (labID, date, numGen, temperature, humidity, pressure, weather, id),
+                (lab_id, date, num_gen, temperature, humidity, pressure, weather, id),
             )
             self.connection.commit()
         except psycopg.errors.DatabaseError:
@@ -129,50 +129,50 @@ class infosManager(tableManager):
         else:
             return True
 
-    def select(self, labID: str, date: str, numGen: int) -> INFO_TABLE_TYPES:
+    def select(self, lab_id: str, date: str, num_gen: int) -> INFO_TABLE_TYPES:
         """条件に合うレコードを取得
 
         Args:
-            labID (str): 研究室名
+            lab_id (str): 研究室名
             date (str): 日付 (YYYY-MM-DD形式)
-            numGen (int): 時限
+            num_gen (int): 時限
 
         Returns:
             INFO_TABLE_TYPES: 検索結果
         """
         self.cursor.execute(
             f"""
-            SELECT labID, date, numGen, temperature, humidity, pressure, weather
+            SELECT lab_id, date, num_gen, temperature, humidity, pressure, weather
             FROM {self.table}
-            WHERE labID = %s and date = %s and numGen = %s
+            WHERE lab_id = %s and date = %s and num_gen = %s
             ORDER BY update_at desc
             """,
-            (labID, date, numGen),
+            (lab_id, date, num_gen),
         )
         record = self.cursor.fetchone()
         return record
 
-    def remove(self, labID: str, date: str, numGen: int):
+    def remove(self, lab_id: str, date: str, num_gen: int):
         self.cursor.execute(
             f"""
             DELETE FROM {self.table}
-            WHERE labID = %s AND date = %s AND numGen = %s
+            WHERE lab_id = %s AND date = %s AND num_gen = %s
             """,
-            (labID, date, numGen),
+            (lab_id, date, num_gen),
         )
         self.connection.commit()
 
-    def is_registered(self, labID: str) -> bool:
+    def is_registered(self, lab_id: str) -> bool:
         """登録済みの研究室か
 
         Args:
-            labID (str): 研究室名
+            lab_id (str): 研究室名
 
         Returns:
             bool: 判定結果
         """
         self.cursor.execute(
-            f"SELECT DISTINCT labID FROM {self.table} WHERE labID = %s", (labID,)
+            f"SELECT DISTINCT lab_id FROM {self.table} WHERE lab_id = %s", (lab_id,)
         )
         record = self.cursor.fetchone()
         return bool(record)
@@ -183,7 +183,7 @@ class infosManager(tableManager):
         Returns:
             list[str]: 登録済み研究室
         """
-        self.cursor.execute(f"SELECT DISTINCT labID FROM {self.table}")
+        self.cursor.execute(f"SELECT DISTINCT lab_id FROM {self.table}")
         records = self.cursor.fetchall()
         rooms = [record[0] for record in records]
         return rooms
@@ -198,7 +198,7 @@ class infosManager(tableManager):
         """
         self.cursor.execute(
             f"""
-            SELECT labID, date, numGen, temperature, humidity, pressure, weather
+            SELECT lab_id, date, num_gen, temperature, humidity, pressure, weather
             FROM {self.table} ORDER BY id
             """
         )

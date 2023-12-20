@@ -21,9 +21,9 @@ async def index():
 async def add_info(info: Info, response: Response):
     print(info)
     if infos_manager.insert(
-        labID=info.labID,
+        lab_id=info.lab_id,
         date=info.date,
-        numGen=info.numGen,
+        num_gen=info.num_gen,
         temperature=info.temperature,
         humidity=info.humidity,
         pressure=info.pressure,
@@ -36,8 +36,8 @@ async def add_info(info: Info, response: Response):
 
 
 @router.get("/isRegistered")
-async def is_registered(labID: str):
-    response = infos_manager.is_registered(labID)
+async def is_registered(lab_id: str):
+    response = infos_manager.is_registered(lab_id)
     return str(response)
 
 
@@ -60,8 +60,8 @@ async def preview_raw_data():
 
 
 @router.get("/getInfo")
-async def get_info(labID: str, date: str, numGen: int):
-    response = infos_manager.select(labID=labID, date=date, numGen=numGen)
+async def get_info(lab_id: str, date: str, num_gen: int):
+    response = infos_manager.select(lab_id=lab_id, date=date, num_gen=num_gen)
     return response if response else "NoData"
 
 
@@ -69,18 +69,18 @@ async def get_info(labID: str, date: str, numGen: int):
 async def active_rooms():
     print(ws_manager.connection_infos)
     response = [
-        info["labID"]
+        info["lab_id"]
         for info in ws_manager.connection_infos.values()
-        if info.get("labID")
+        if info.get("lab_id")
     ]
     return response if response else "NoActiveRooms"
 
 
 @router.post("/requestInfo", status_code=status.HTTP_200_OK)
-async def request_info(labID: str, response: Response):
-    print(f"receive request {labID}")
-    if labID in ws_manager.active_rooms:
-        await ws_manager.send_request_info(labID)
+async def request_info(lab_id: str, response: Response):
+    print(f"receive request {lab_id}")
+    if lab_id in ws_manager.active_rooms:
+        await ws_manager.send_request_info(lab_id)
         return {"status": "request sended"}
     else:
         response.status_code = status.HTTP_400_BAD_REQUEST

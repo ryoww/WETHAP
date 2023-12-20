@@ -14,39 +14,39 @@ router = APIRouter(prefix=prefix)
 
 def prepare(data):
     if (record := sender_manager.select(uuid=data["uuid"], wrap=True)) is not None:
-        return record["labID"]
-    elif data["labID"] not in sender_manager.get_all_labID():
-        sender_manager.insert(uuid=data["uuid"], labID=data["labID"])
-        return data["labID"]
+        return record["lab_id"]
+    elif data["lab_id"] not in sender_manager.get_all_lab_id():
+        sender_manager.insert(uuid=data["uuid"], lab_id=data["lab_id"])
+        return data["lab_id"]
     else:
         new_id = sender_manager.get_all()[-1]["id"] + 1
-        dummy_labID = f"dummy{new_id}"
-        sender_manager.insert(uuid=data["uuid"], labID=dummy_labID)
-        return dummy_labID
+        dummy_lab_id = f"dummy{new_id}"
+        sender_manager.insert(uuid=data["uuid"], lab_id=dummy_lab_id)
+        return dummy_lab_id
 
 
 @router.websocket("")
 async def websocket_endpoint(websocket: WebSocket):
     await ws_manager.connect(websocket)
     try:
-        # NOTE: data = {"uuid": str, "labID": str, (...)}
+        # NOTE: data = {"uuid": str, "lab_id": str, (...)}
         data = await websocket.receive_json()
-        if not (data.get("uuid") and data.get("labID")):
+        if not (data.get("uuid") and data.get("lab_id")):
             print(f"disconnect ({data})")
             await websocket.close(1007)
             ws_manager.disconnect(websocket)
             return
-        labID = prepare(data)
+        lab_id = prepare(data)
         ws_manager.update_info(websocket, data)
-        print(f"connect {labID}")
-        await websocket.send_json({"labID": labID})
+        print(f"connect {lab_id}")
+        await websocket.send_json({"lab_id": lab_id})
 
         while True:
             data = await websocket.receive_json()
             result = infos_manager.insert(
-                labID=data["labID"],
+                lab_id=data["lab_id"],
                 date=data.get("date", str(datetime.date.today())),
-                numGen=data.get("numGen"),
+                num_gen=data.get("num_gen"),
                 temperature=data["temperature"],
                 humidity=data["humidity"],
                 pressure=data["pressure"],

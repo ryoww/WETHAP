@@ -15,6 +15,7 @@ class websocketManager:
         self.active_connections.remove(websocket)
 
     async def send_message(self, websocket: WebSocket, message: Any):
+        print(type(message), message)
         if isinstance(message, str):
             await websocket.send_text(message)
         elif isinstance(message, dict):
@@ -44,17 +45,17 @@ class senderWebsocketManager(websocketManager):
 
     def disconnect(self, websocket: WebSocket):
         super().disconnect(websocket)
-        if (labID := self.connection_infos[websocket].get("labID")) is not None:
-            self.active_rooms.remove(labID)
+        if (lab_id := self.connection_infos[websocket].get("lab_id")) is not None:
+            self.active_rooms.remove(lab_id)
         del self.connection_infos[websocket]
 
     def update_info(self, websocket: WebSocket, info: dict):
         self.connection_infos[websocket].update(info)
-        if (labID := info.get("labID")) is not None:
-            self.active_rooms.append(labID)
+        if (lab_id := info.get("lab_id")) is not None:
+            self.active_rooms.append(lab_id)
 
-    async def send_request_info(self, labID: str):
+    async def send_request_info(self, lab_id: str):
         for ws in self.active_connections:
-            if self.connection_infos[ws]["labID"] == labID:
+            if self.connection_infos[ws]["lab_id"] == lab_id:
                 await ws.send_json({"message": "request info"})
-                print(f"send request to {labID}")
+                print(f"send request to {lab_id}")

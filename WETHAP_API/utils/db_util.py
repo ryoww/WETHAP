@@ -49,10 +49,12 @@ class tableManager(ABC):
 
     def get_all(self, wrap: bool = True) -> list:
         """全レコードを取得"""
-        self.cursor.execute(f"SELECT * FROM {self.table}")
+        query = f"SELECT * FROM {self.table}"
         if wrap:
+            self.dict_cursor.execute(query)
             records = self.dict_cursor.fetchall()
         else:
+            self.cursor.execute(query)
             records = self.cursor.fetchall()
         return records
 
