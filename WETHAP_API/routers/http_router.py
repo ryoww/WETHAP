@@ -19,7 +19,7 @@ async def index():
 
 @router.post("/addInfo", status_code=status.HTTP_200_OK)
 async def add_info(info: Info, response: Response):
-    print(info)
+    print(f"addInfo request: {info}")
     if infos_manager.insert(
         lab_id=info.lab_id,
         date=info.date,

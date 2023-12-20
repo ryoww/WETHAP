@@ -15,7 +15,6 @@ class websocketManager:
         self.active_connections.remove(websocket)
 
     async def send_message(self, websocket: WebSocket, message: Any):
-        print(type(message), message)
         if isinstance(message, str):
             await websocket.send_text(message)
         elif isinstance(message, dict):
