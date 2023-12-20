@@ -19,22 +19,6 @@ class infosManager(tableManager):
         datetime.datetime,
     ]
 
-    @property
-    def column_info(self) -> dict[str, type]:
-        column_info = {
-            "id": int,
-            "labID": str,
-            "date": datetime.date,
-            "numGen": int,
-            "temperature": Decimal,
-            "humidity": Decimal,
-            "pressure": Decimal,
-            "weather": str,
-            "create_at": datetime.datetime,
-            "update_at": datetime.datetime,
-        }
-        return column_info
-
     def create_table(self) -> None:
         """WETHAP infos用のテーブルを作成"""
         self.cursor.execute(

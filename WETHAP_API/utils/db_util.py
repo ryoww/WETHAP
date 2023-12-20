@@ -23,11 +23,6 @@ class tableManager(ABC):
         self.cursor = self.connection.cursor()
         self.dict_cursor = self.connection.cursor(row_factory=dict_row)
 
-    @property
-    @abstractmethod
-    def column_info(self) -> dict[str, type]:
-        raise NotImplementedError
-
     @abstractmethod
     def create_table(self) -> None:
         """テーブルを作成"""
@@ -55,35 +50,11 @@ class tableManager(ABC):
     def get_all(self, wrap: bool = True) -> list:
         """全レコードを取得"""
         self.cursor.execute(f"SELECT * FROM {self.table}")
-        records = self.cursor.fetchall()
-        if not wrap:
-            return records
-        wrapped_records = self.wrap_records(records)
-        return wrapped_records
-
-    def wrap_records(self, response: list | tuple) -> list | tuple:
-        """fetch結果をフィールド名を辞書としたdictに変換
-
-        Args:
-            response (list|tuple): レコード
-
-        Returns:
-            list|tuple: 変換後のレコード
-        """
-        if response is None:
-            return None
-        elif isinstance(response, tuple):
-            wrapped = {
-                key: item for key, item in zip(self.column_info.keys(), response)
-            }
-        elif isinstance(response, list):
-            wrapped = [
-                {key: item for key, item in zip(self.column_info.keys(), record)}
-                for record in response
-            ]
+        if wrap:
+            records = self.dict_cursor.fetchall()
         else:
-            raise ValueError
-        return wrapped
+            records = self.cursor.fetchall()
+        return records
 
     @abstractmethod
     def insert(self) -> bool:
