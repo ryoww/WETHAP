@@ -39,7 +39,7 @@ class senderWebsocketManager(websocketManager):
         self.active_rooms: list[str] = []
 
     async def connect(self, websocket: WebSocket):
-        super().connect(websocket)
+        await super().connect(websocket)
         self.connection_infos[websocket] = {}
 
     def disconnect(self, websocket: WebSocket):
@@ -56,6 +56,5 @@ class senderWebsocketManager(websocketManager):
     async def send_request_info(self, labID: str):
         for ws in self.active_connections:
             if self.connection_infos[ws]["labID"] == labID:
-                await ws.send_json({"massage": "request info"})
-
-                print("send request")
+                await ws.send_json({"message": "request info"})
+                print(f"send request to {labID}")

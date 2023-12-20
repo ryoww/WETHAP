@@ -16,9 +16,14 @@ def prepare(data):
     if (record := sender_manager.select(uuid=data["uuid"])) is not None:
         record = sender_manager.wrap_records(record)
         return record["labID"]
-    else:
+    elif data["labID"] not in sender_manager.get_all_labID():
         sender_manager.insert(uuid=data["uuid"], labID=data["labID"])
         return data["labID"]
+    else:
+        new_id = sender_manager.get_all()[-1]["id"] + 1
+        dummy_labID = f"dummy{new_id}"
+        sender_manager.insert(uuid=data["uuid"], labID=dummy_labID)
+        return dummy_labID
 
 
 @router.websocket("")
@@ -27,7 +32,6 @@ async def websocket_endpoint(websocket: WebSocket):
     try:
         # NOTE: data = {"uuid": str, "labID": str, (...)}
         data = await websocket.receive_json()
-        print(data)
         if not (data.get("uuid") and data.get("labID")):
             print(f"disconnect ({data})")
             await websocket.close(1007)
@@ -35,6 +39,7 @@ async def websocket_endpoint(websocket: WebSocket):
             return
         labID = prepare(data)
         ws_manager.update_info(websocket, data)
+        print(f"connect {labID}")
         await websocket.send_json({"labID": labID})
 
         while True:

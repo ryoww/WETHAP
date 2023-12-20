@@ -41,7 +41,7 @@ async def main():
         while True:
             # response = await websocket.recv()
             # response = json.loads(response)
-            # if response["massage"] == "request info":
+            # if response["message"] == "request info":
             #     message = {
             #         "labID": labID,
             #         # "date": str(datetime.date.today()),

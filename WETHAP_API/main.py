@@ -46,9 +46,9 @@ def get_numGen():
 
 async def request_info(numGen=None):
     numGen = get_numGen()
-    massage = {"massage": "request info", "numGen": numGen}
-    print(massage)
-    await ws_manager.broadcast(json.dumps(massage))
+    message = {"message": "request info", "numGen": numGen}
+    print(message)
+    await ws_manager.broadcast(json.dumps(message))
 
 
 async def run_at(schedule_times: list[datetime.time]):
@@ -75,7 +75,7 @@ async def run_at(schedule_times: list[datetime.time]):
 async def keep_connection():
     while True:
         await asyncio.sleep(5 * 60)
-        ws_manager.broadcast({"message", "keep connection"})
+        await ws_manager.broadcast({"message", "keep connection"})
 
 
 async def start_app():

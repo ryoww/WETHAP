@@ -113,8 +113,9 @@ class senderManager(tableManager):
     def get_all_labID(self):
         """端末に割り当てられているlabIDの一覧を取得"""
         self.cursor.execute(f"""SELECT labID FROM {self.table}""")
-        record = self.cursor.fetchone()
-        return record
+        records = self.cursor.fetchall()
+        labIDs = [record[0] for record in records]
+        return labIDs
 
     def change_labID(self, id: int, labID: str):
         self.cursor.execute(
