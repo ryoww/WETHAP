@@ -37,6 +37,7 @@ async def websocket_endpoint(websocket: WebSocket):
             ws_manager.disconnect(websocket)
             return
         lab_id = prepare(data)
+        data["lab_id"] = lab_id
         ws_manager.update_info(websocket, data)
         print(f"connect {lab_id}")
         await websocket.send_json({"lab_id": lab_id})
