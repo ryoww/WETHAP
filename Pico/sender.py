@@ -132,7 +132,6 @@ class Sender:
                 raise RuntimeError("time update failed")
         else:
             print("clock update by NTP success")
-            print(self.now())
             self.display.multi_text("time update", "success")
 
     def get_info(self):
