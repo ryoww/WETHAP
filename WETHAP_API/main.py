@@ -39,14 +39,14 @@ app.include_router(http_router.router)
 app.include_router(ws_router.router)
 
 
-def get_numGen():
+def get_num_gen():
     now = datetime.datetime.now().time().replace(second=0, microsecond=0)
     return FINISH_TIMES.index(now) + 1
 
 
-async def request_info(numGen=None):
-    numGen = get_numGen()
-    message = {"message": "request info", "num_gen": numGen}
+async def request_info():
+    num_gen = get_num_gen()
+    message = {"message": "request info", "num_gen": num_gen}
     print(message)
     await ws_manager.broadcast(json.dumps(message))
 
