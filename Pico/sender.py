@@ -22,7 +22,7 @@ class Config:
         self.adjust_humid_range = adjust_humid_range
 
     def load_env(self, env):
-        self.lab_id = env.LAB_ID
+        self.labID = env.LAB_ID
 
         self.wifi_ssid = env.SSID
         self.wifi_password = env.PASSWORD
@@ -41,7 +41,7 @@ class Sender:
         self, config: Config, led: Pin, i2c: I2C, temp_adj: ADC, humid_adj: ADC
     ) -> None:
         self.config = config
-        self.lab_id = self.config.lab_id
+        self.labID = self.config.labID
         self.machine_id = str(unique_id().hex())
         self.led = led
         self.i2c = i2c

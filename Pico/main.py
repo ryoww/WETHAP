@@ -41,7 +41,7 @@ async def send_info_loop():
         print(data)
         if data.get("message") != "request info":
             continue
-        message = {"lab_id": master.lab_id}
+        message = {"labID": master.labID}
         message.update(master.get_info())
         if data.get("numGen") is not None:
             message["numGen"] = data.get("numGen")
@@ -115,15 +115,15 @@ async def main_loop():
             print("...handshaked.")
 
             await master.ws.send(
-                json.dumps({"uuid": master.machine_id, "lab_id": master.lab_id})
+                json.dumps({"uuid": master.machine_id, "labID": master.labID})
             )
             print(
-                f'send: {json.dumps({"uuid": master.machine_id, "lab_id": master.lab_id})}'
+                f'send: {json.dumps({"uuid": master.machine_id, "labID": master.labID})}'
             )
             init_info = await master.ws.recv()
-            master.lab_id = json.loads(init_info)["lab_id"]
+            master.labID = json.loads(init_info)["labID"]
             master.led.on()
-            print(f"my labID: {master.lab_id}, received info: {init_info}")
+            print(f"my labID: {master.labID}, received info: {init_info}")
             await send_info_loop()
 
         except Exception as error:
