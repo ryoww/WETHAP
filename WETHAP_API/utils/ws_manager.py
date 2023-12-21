@@ -44,17 +44,30 @@ class senderWebsocketManager(websocketManager):
 
     def disconnect(self, websocket: WebSocket):
         super().disconnect(websocket)
-        if (lab_id := self.connection_infos[websocket].get("lab_id")) is not None:
-            self.active_rooms.remove(lab_id)
         del self.connection_infos[websocket]
+        self.update_active_rooms()
 
     def update_info(self, websocket: WebSocket, info: dict):
         self.connection_infos[websocket].update(info)
-        if (lab_id := info.get("lab_id")) is not None:
+        if (lab_id := info.get("labID")) is not None:
             self.active_rooms.append(lab_id)
+
+    def update_active_rooms(self):
+        self.active_rooms = [
+            info.get("labID")
+            for info in self.connection_infos.values()
+            if info.get("labID")
+        ]
 
     async def send_request_info(self, lab_id: str):
         for ws in self.active_connections:
-            if self.connection_infos[ws]["lab_id"] == lab_id:
+            if self.connection_infos[ws]["labID"] == lab_id:
                 await ws.send_json({"message": "request info"})
                 print(f"send request to {lab_id}")
+
+    async def send_change_lab_id(self, before, after):
+        for ws in self.active_connections:
+            if self.connection_infos[ws]["labID"] == before:
+                await ws.send_json({"message": "change labID", "new labID": after})
+                self.connection_infos[ws]["labID"] = after
+                print(f"send change labID {before} to {after}")

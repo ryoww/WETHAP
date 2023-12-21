@@ -46,7 +46,7 @@ def get_num_gen():
 
 async def request_info():
     num_gen = get_num_gen()
-    message = {"message": "request info", "num_gen": num_gen}
+    message = {"message": "request info", "numGen": num_gen}
     print(message)
     await ws_manager.broadcast(json.dumps(message))
 

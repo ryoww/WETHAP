@@ -3,9 +3,9 @@ import os
 import dotenv
 from fastapi import APIRouter, Response, status
 from fetchWeather import fetchWeather
-from managers import infos_manager, ws_manager
+from managers import infos_manager, sender_manager, ws_manager
 
-from routers.router_depends import Info, requestInfo
+from routers.router_depends import Info, requestChange, requestInfo
 
 dotenv.load_dotenv()
 prefix = os.environ.get("PREFIX")
@@ -69,9 +69,9 @@ async def get_info(labID: str, date: str, numGen: int):
 async def active_rooms():
     print(ws_manager.connection_infos)
     response = [
-        info["lab_id"]
+        info["labID"]
         for info in ws_manager.connection_infos.values()
-        if info.get("lab_id")
+        if info.get("labID")
     ]
     return response if response else "NoActiveRooms"
 
@@ -85,3 +85,35 @@ async def request_info(request: requestInfo, response: Response):
     else:
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {"status": "non active room"}
+
+
+@router.post("/changeLabID", status_code=status.HTTP_200_OK)
+async def change_lab_id(request: requestChange, response: Response):
+    print(request)
+    if request.id is None != request.before_labID is None:
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return "You must specify either the 'id' or 'before_labID'; both cannot be omitted."
+    elif request.after_labID in sender_manager.get_all_lab_id():
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return "after_labID already exists."
+    elif request.id is None:
+        if sender_manager.change_lab_id(
+            after_lab_id=request.after_labID, before_lab_id=request.before_labID
+        ):
+            await ws_manager.send_change_lab_id(
+                request.before_labID, request.after_labID
+            )
+            return "labID changed."
+        else:
+            response.status_code = status.HTTP_400_BAD_REQUEST
+            return "before_labID is an non-existent labID."
+    else:
+        if sender_manager.change_lab_id(
+            after_lab_id=request.after_labID, id=request.id
+        ):
+            before = sender_manager.get_lab_id(request.id)
+            await ws_manager.send_change_lab_id(before, request.after_labID)
+            return "labID changed."
+        else:
+            response.status_code = status.HTTP_400_BAD_REQUEST
+            return "id dose not exist."

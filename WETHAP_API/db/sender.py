@@ -112,7 +112,7 @@ class senderManager(tableManager):
             f"""SELECT lab_id FROM {self.table} WHERE id = %s""",
             (id,),
         )
-        record = self.cursor.fetchone()
+        record = self.cursor.fetchone()[0]
         return record
 
     def get_all_lab_id(self):

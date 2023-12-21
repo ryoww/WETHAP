@@ -14,3 +14,9 @@ class Info(BaseModel):
 
 class requestInfo(BaseModel):
     labID: str
+
+
+class requestChange(BaseModel):
+    id: int | None = None
+    before_labID: str | None = None
+    after_labID: str
