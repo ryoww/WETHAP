@@ -38,34 +38,32 @@ async def send_info_loop():
         if data is None:
             continue
         data = json.loads(data)
-        if data.get("message") != "change labID":
+        if data.get("message") == "change labID":
             if data.get("new labID"):
                 master.labID = data.get("new labID")
                 print(f"change labID to {master.labID}")
-            continue
-        elif data.get("message") != "request info":
-            continue
-        message = {"labID": master.labID}
-        message.update(master.get_info())
-        if data.get("numGen") is not None:
-            message["numGen"] = data.get("numGen")
-        await master.ws.send(json.dumps(message))
-        print(f"Sent from Client: {message}")
+        elif data.get("message") == "request info":
+            message = {"labID": master.labID}
+            message.update(master.get_info())
+            if data.get("numGen") is not None:
+                message["numGen"] = data.get("numGen")
+            await master.ws.send(json.dumps(message))
+            print(f"Sent from Client: {message}")
 
-        async with master.lock:
-            now = master.now()
-            if message.get("numGen") is None:
-                master.display.add_text("manual request", new=True)
-                master.display.add_text("info posted").line()
-            else:
-                master.display.add_text("info posted", new=True).line()
-            master.display.add_text(f"date:{now[0]}-{now[1]:02d}-{now[2]:02d}")
-            if message.get("numGen") is not None:
-                master.display.add_text(f'numGen:{message["numGen"]}')
-            master.display.add_text(f'Temp:{message["temperature"]}C')
-            master.display.add_text(f'Hmd.:{message["humidity"]}%')
-            master.display.add_text(f'Pres.:{message["pressure"]}hPa').show()
-            await asyncio.sleep_ms(1000)
+            async with master.lock:
+                now = master.now()
+                if message.get("numGen") is None:
+                    master.display.add_text("manual request", new=True)
+                    master.display.add_text("info posted").line()
+                else:
+                    master.display.add_text("info posted", new=True).line()
+                master.display.add_text(f"date:{now[0]}-{now[1]:02d}-{now[2]:02d}")
+                if message.get("numGen") is not None:
+                    master.display.add_text(f'numGen:{message["numGen"]}')
+                master.display.add_text(f'Temp:{message["temperature"]}C')
+                master.display.add_text(f'Hmd.:{message["humidity"]}%')
+                master.display.add_text(f'Pres.:{message["pressure"]}hPa').show()
+                await asyncio.sleep_ms(1000)
 
 
 async def wifi_connection_loop():
