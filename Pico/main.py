@@ -2,7 +2,7 @@ import asyncio
 import gc
 import json
 
-from machine import ADC, I2C, Pin
+from machine import ADC, I2C, Pin, reset
 
 import env
 from sender import Config, Sender
@@ -139,7 +139,10 @@ async def main():
     await init()
     if master.display.status:
         tasks += [update_time_loop(), display_info_loop()]
-    await asyncio.gather(*tasks)
+    try:
+        await asyncio.gather(*tasks)
+    except Exception:
+        reset()
 
 
 asyncio.run(main())
