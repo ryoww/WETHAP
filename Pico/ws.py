@@ -82,6 +82,8 @@ class AsyncWebsocketClient:
         return line
 
     async def a_read(self, size: int = None):
+        if size == 0:
+            return b""
         chunks = []
         while True:
             b = self.sock.read(size)
@@ -105,7 +107,7 @@ class AsyncWebsocketClient:
         self.sock.connect(addr)
         self.sock.setblocking(False)
         if self.uri.protocol == "wss":
-            self.sock = ssl.wrap_socket(self.sock)
+            self.sock = ssl.wrap_socket(self.sock, server_hostname=self.uri.hostname)
         # await self.open(False)
 
         def send_header(header, *args):
@@ -134,7 +136,8 @@ class AsyncWebsocketClient:
         line = await self.a_readline()
         header = (line)[:-2]
         if not header.startswith(b"HTTP/1.1 101 "):
-            return False
+            # return False
+            raise Exception(header)
             # probably need to skip or something?
 
         # We don't (currently) need these headers

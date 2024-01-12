@@ -79,7 +79,7 @@ class Sender:
                 self.display.add_text("BME680 connect").show(False)
 
     async def wifi_connect(self) -> None:
-        self.wifi.active(1)
+        self.wifi.active(True)
         count = 1
 
         while not self.wifi.isconnected() and count <= self.config.wifi_attempts:
@@ -118,7 +118,9 @@ class Sender:
             print("rtc time update failed")
             return False
 
-    def update_time(self):
+    async def update_time(self):
+        if not self.wifi.isconnected():
+            await self.wifi_connect()
         try:
             ntptime.settime()
         except Exception:

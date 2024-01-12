@@ -26,8 +26,9 @@ async def init():
         master.led.off()
         master.display.add_text("booting...", new=True).line().show(False)
         master.init_sensor()
+        master.display.add_text("wifi connecting").show(False)
         await master.wifi_connect()
-        master.update_time()
+        await master.update_time()
         print("initialize complete")
         master.led.on()
 
@@ -86,13 +87,13 @@ async def update_time_loop():
         while not master.wifi.isconnected():
             await asyncio.sleep_ms(config.wifi_delay)
         async with master.lock:
-            master.update_time()
+            await master.update_time()
 
 
 async def display_info_loop():
     while True:
         async with master.lock:
-            master.display.clear()
+            # master.display.clear()
             envs = master.get_info()
             now = master.now()
             master.display.multi_text(
