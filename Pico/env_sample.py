@@ -6,7 +6,7 @@ NTP_SERVER: str = "ntp.nict.jp"
 
 SSID: str = "***"
 PASSWORD: str = "***"
-WIFI_DELAY: int = 200
-ATTEMPTS: int = 3
+WIFI_DELAY: int = 500
+ATTEMPTS: int = 5
 
 SOCKET_DELAY: int = 5

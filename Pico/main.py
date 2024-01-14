@@ -140,10 +140,10 @@ async def main():
     await init()
     if master.display.status:
         tasks += [update_time_loop(), display_info_loop()]
-    try:
-        await asyncio.gather(*tasks)
-    except Exception:
-        reset()
+    await asyncio.gather(*tasks)
 
 
-asyncio.run(main())
+try:
+    asyncio.run(main())
+except Exception:
+    reset()
