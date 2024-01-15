@@ -1,6 +1,5 @@
 import asyncio
 import datetime
-import json
 import os
 
 import dotenv
@@ -48,7 +47,7 @@ async def request_info():
     num_gen = get_num_gen()
     message = {"message": "request info", "numGen": num_gen}
     print(message)
-    await ws_manager.broadcast(json.dumps(message))
+    await ws_manager.broadcast(message)
 
 
 async def run_at(schedule_times: list[datetime.time]):
