@@ -101,7 +101,7 @@ async def display_info_loop():
                 f"{now[4]:02d}:{now[5]:02d}:{now[6]:02d}",
                 f'Temp:{envs["temperature"]:.3f}C',
                 f'Hmd.:{envs["humidity"]:.3f}%',
-                f'Pres.:{envs["pressure"]:.5g}hPa',
+                f'Pres.:{envs["pressure"]:.2f}hPa',
                 lines=[2],
             )
         await asyncio.sleep_ms(900)
@@ -136,14 +136,15 @@ async def main_loop():
 
 
 async def main():
-    tasks = [main_loop(), wifi_connection_loop()]
-    await init()
-    if master.display.status:
-        tasks += [update_time_loop(), display_info_loop()]
-    await asyncio.gather(*tasks)
+    try:
+        tasks = [main_loop(), wifi_connection_loop()]
+        await init()
+        if master.display.status:
+            tasks += [update_time_loop(), display_info_loop()]
+        await asyncio.gather(*tasks)
+    except Exception:
+        await master.ws.close()
+        reset()
 
 
-try:
-    asyncio.run(main())
-except Exception:
-    reset()
+asyncio.run(main())
