@@ -33,8 +33,8 @@ async def websocket_endpoint(websocket: WebSocket):
         data = await websocket.receive_json()
         if not (data.get("uuid") and data.get("labID")):
             print(f"disconnect ({data})")
-            await websocket.close(1007)
             ws_manager.disconnect(websocket)
+            await websocket.close(1007)
             return
         lab_id = prepare(data)
         data["labID"] = lab_id
@@ -44,16 +44,17 @@ async def websocket_endpoint(websocket: WebSocket):
 
         while True:
             data = await websocket.receive_json()
-            result = infos_manager.insert(
-                lab_id=data["labID"],
-                date=data.get("date", str(datetime.date.today())),
-                num_gen=data.get("numGen"),
-                temperature=data["temperature"],
-                humidity=data["humidity"],
-                pressure=data["pressure"],
-                weather=fetchWeather(),
-            )
-            print(f"status: {result}, data: {data}")
+            if (info := data.get("info")) is not None:
+                result = infos_manager.insert(
+                    lab_id=info["labID"],
+                    date=info.get("date", str(datetime.date.today())),
+                    num_gen=info.get("numGen"),
+                    temperature=info["temperature"],
+                    humidity=info["humidity"],
+                    pressure=info["pressure"],
+                    weather=fetchWeather(),
+                )
+                print(f"status: {result}, data: {data}")
 
     except WebSocketDisconnect:
         ws_manager.disconnect(websocket)
