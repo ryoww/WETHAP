@@ -35,6 +35,8 @@ class Config:
 
         self.socket_delay = env.SOCKET_DELAY
 
+        self.keep_alive_interval = env.KEEP_ALIVE_INTERVAL
+
 
 class Sender:
     def __init__(

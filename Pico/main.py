@@ -68,6 +68,12 @@ async def send_info_loop():
                 await asyncio.sleep_ms(1000)
 
 
+async def keep_connection_loop(interval=60):
+    while await master.ws.open():
+        await master.ws.send(json.dumps({"message": "keep-alive"}))
+        await asyncio.sleep(interval)
+
+
 async def wifi_connection_loop():
     while True:
         if not master.wifi.isconnected():
@@ -131,7 +137,10 @@ async def main_loop():
                 print(f"my labID: {master.labID}, received info: {init_info}")
                 master.display.add_text("server connected")
                 master.led.on()
-            await send_info_loop()
+            await asyncio.gather(
+                keep_connection_loop(master.config.keep_alive_interval),
+                send_info_loop(),
+            )
 
         except Exception as error:
             print(f"Exception: {error}")
