@@ -44,10 +44,11 @@ async def send_info_loop():
                 master.labID = data.get("new labID")
                 print(f"change labID to {master.labID}")
         elif data.get("message") == "request info":
-            message = {"labID": master.labID}
-            message.update(master.get_info())
+            info = {"labID": master.labID}
+            info.update(master.get_info())
             if data.get("numGen") is not None:
-                message["numGen"] = data.get("numGen")
+                info["numGen"] = data.get("numGen")
+            message = {"status": "send info", "info": info}
             await master.ws.send(json.dumps(message))
             print(f"Sent from Client: {message}")
 
@@ -111,22 +112,25 @@ async def main_loop():
     while True:
         gc.collect()
         try:
-            master.led.off()
-            print("Handshaking...")
-            if not await master.ws.handshake(config.api_server):
-                raise Exception("Handshake error.")
-            print("...handshaked.")
+            async with master.lock:
+                master.led.off()
+                master.display.add_text("server connecting...", row=3, new=True)
+                print("Handshaking...")
+                if not await master.ws.handshake(config.api_server):
+                    raise Exception("Handshake error.")
+                print("...handshaked.")
 
-            await master.ws.send(
-                json.dumps({"uuid": master.machine_id, "labID": master.labID})
-            )
-            print(
-                f'send: {json.dumps({"uuid": master.machine_id, "labID": master.labID})}'
-            )
-            init_info = await master.ws.recv()
-            master.labID = json.loads(init_info)["labID"]
-            master.led.on()
-            print(f"my labID: {master.labID}, received info: {init_info}")
+                await master.ws.send(
+                    json.dumps({"uuid": master.machine_id, "labID": master.labID})
+                )
+                print(
+                    f'send: {json.dumps({"uuid": master.machine_id, "labID": master.labID})}'
+                )
+                init_info = await master.ws.recv()
+                master.labID = json.loads(init_info)["labID"]
+                print(f"my labID: {master.labID}, received info: {init_info}")
+                master.display.add_text("server connected")
+                master.led.on()
             await send_info_loop()
 
         except Exception as error:
