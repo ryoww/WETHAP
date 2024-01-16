@@ -54,17 +54,17 @@ async def send_info_loop():
 
             async with master.lock:
                 now = master.now()
-                if message.get("numGen") is None:
+                if info.get("numGen") is None:
                     master.display.add_text("manual request", new=True)
                     master.display.add_text("info posted").line()
                 else:
                     master.display.add_text("info posted", new=True).line()
                 master.display.add_text(f"date:{now[0]}-{now[1]:02d}-{now[2]:02d}")
-                if message.get("numGen") is not None:
-                    master.display.add_text(f'numGen:{message["numGen"]}')
-                master.display.add_text(f'Temp:{message["temperature"]}C')
-                master.display.add_text(f'Hmd.:{message["humidity"]}%')
-                master.display.add_text(f'Pres.:{message["pressure"]}hPa').show()
+                if info.get("numGen") is not None:
+                    master.display.add_text(f'numGen:{info["numGen"]}')
+                master.display.add_text(f'Temp:{info["temperature"]}C')
+                master.display.add_text(f'Hmd.:{info["humidity"]}%')
+                master.display.add_text(f'Pres.:{info["pressure"]}hPa').show()
                 await asyncio.sleep_ms(1000)
 
 
