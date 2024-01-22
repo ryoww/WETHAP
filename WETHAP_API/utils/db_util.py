@@ -4,7 +4,7 @@ import psycopg
 from psycopg.rows import dict_row
 
 
-class tableManager(ABC):
+class TableManager(ABC):
     def __init__(
         self,
         table: str,

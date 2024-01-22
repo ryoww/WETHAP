@@ -1,10 +1,10 @@
 import datetime
 
 import psycopg
-from utils.db_util import tableManager
+from utils.db_util import TableManager
 
 
-class senderManager(tableManager):
+class SenderManager(TableManager):
     @property
     def column_info(self) -> dict[str, type]:
         column_info = {

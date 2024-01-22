@@ -5,7 +5,7 @@ from fastapi import APIRouter, Response, status
 from fetchWeather import fetchWeather
 from managers import infos_manager, sender_manager, ws_manager
 
-from routers.router_depends import Info, requestChange, requestInfo
+from routers.router_depends import Info, RequestChange, RequestInfo
 
 dotenv.load_dotenv()
 prefix = os.environ.get("PREFIX")
@@ -60,13 +60,88 @@ async def preview_raw_data():
 
 
 @router.get("/getInfo")
+async def get_a_info(labID: str, date: str, numGen: int):
+    response = infos_manager.select(lab_id=labID, date=date, num_gen=numGen)
+    return response if response else "NoData"
+
+
+# ここから新API仕様
+@router.get("/infos")
+async def get_infos(raw: bool = False):
+    if raw:
+        response = infos_manager.get_all()
+    else:
+        response = infos_manager.preview_data()
+    return response
+
+
+@router.get("/info")
 async def get_info(labID: str, date: str, numGen: int):
     response = infos_manager.select(lab_id=labID, date=date, num_gen=numGen)
     return response if response else "NoData"
 
 
-@router.get("/activeRooms")
-async def active_rooms():
+@router.post("/info", status_code=status.HTTP_200_OK)
+async def post_info(info: Info, response: Response):
+    print(f"post info request: {info}")
+    if infos_manager.insert(
+        lab_id=info.labID,
+        date=info.date,
+        num_gen=info.numGen,
+        temperature=info.temperature,
+        humidity=info.humidity,
+        pressure=info.pressure,
+        weather=fetchWeather(),
+    ):
+        return {"status": "added"}
+    else:
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {"status": "failed"}
+
+
+@router.get("/is-registered")
+async def get_is_registered(labID: str):
+    response = infos_manager.is_registered(labID)
+    return "true" if response else "false"
+
+
+@router.get("/lab-ids")
+async def get_lab_ids():
+    response = infos_manager.registered_rooms()
+    return response
+
+
+@router.patch("/lab-ids", status_code=status.HTTP_200_OK)
+async def patch_lab_ids(request: RequestChange, response: Response):
+    print(request)
+    if request.id is None != request.before_labID is None:
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return "You must specify either the 'id' or 'before_labID'; both cannot be omitted."
+    elif request.after_labID is None:
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return "after_labID is required."
+    elif request.after_labID in sender_manager.get_all_lab_id():
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return "after_labID already exists."
+    if sender_manager.change_lab_id(
+        after_lab_id=request.after_labID,
+        id=request.id,
+        before_lab_id=request.before_labID,
+    ):
+        before = (
+            sender_manager.get_lab_id(request.id)
+            if request.before_labID is None
+            else request.before_labID
+        )
+        await ws_manager.send_change_lab_id(before, request.after_labID)
+        return "labID changed."
+    else:
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return "before_labID is an non-existent labID."
+
+
+@router.get("/active-rooms")
+async def get_active_rooms():
     print(ws_manager.connection_infos)
     response = [
         info["labID"]
@@ -76,8 +151,8 @@ async def active_rooms():
     return response if response else "NoActiveRooms"
 
 
-@router.post("/requestInfo", status_code=status.HTTP_200_OK)
-async def request_info(request: requestInfo, response: Response):
+@router.post("/request", status_code=status.HTTP_200_OK)
+async def post_request_info(request: RequestInfo, response: Response):
     print(f"receive request {request.labID}")
     if request.labID in ws_manager.active_rooms:
         await ws_manager.send_request_info(request.labID)
@@ -85,35 +160,3 @@ async def request_info(request: requestInfo, response: Response):
     else:
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {"status": "non active room"}
-
-
-@router.post("/changeLabID", status_code=status.HTTP_200_OK)
-async def change_lab_id(request: requestChange, response: Response):
-    print(request)
-    if request.id is None != request.before_labID is None:
-        response.status_code = status.HTTP_400_BAD_REQUEST
-        return "You must specify either the 'id' or 'before_labID'; both cannot be omitted."
-    elif request.after_labID in sender_manager.get_all_lab_id():
-        response.status_code = status.HTTP_400_BAD_REQUEST
-        return "after_labID already exists."
-    elif request.id is None:
-        if sender_manager.change_lab_id(
-            after_lab_id=request.after_labID, before_lab_id=request.before_labID
-        ):
-            await ws_manager.send_change_lab_id(
-                request.before_labID, request.after_labID
-            )
-            return "labID changed."
-        else:
-            response.status_code = status.HTTP_400_BAD_REQUEST
-            return "before_labID is an non-existent labID."
-    else:
-        if sender_manager.change_lab_id(
-            after_lab_id=request.after_labID, id=request.id
-        ):
-            before = sender_manager.get_lab_id(request.id)
-            await ws_manager.send_change_lab_id(before, request.after_labID)
-            return "labID changed."
-        else:
-            response.status_code = status.HTTP_400_BAD_REQUEST
-            return "id dose not exist."

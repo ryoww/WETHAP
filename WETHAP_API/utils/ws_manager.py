@@ -3,7 +3,7 @@ from typing import Any
 from fastapi import WebSocket
 
 
-class websocketManager:
+class WebsocketManager:
     def __init__(self) -> None:
         self.active_connections: list[WebSocket] = []
 
@@ -32,7 +32,7 @@ class websocketManager:
             await self.send_message(connection, message)
 
 
-class senderWebsocketManager(websocketManager):
+class SenderWebsocketManager(WebsocketManager):
     def __init__(self) -> None:
         super().__init__()
         self.connection_infos: dict[WebSocket, dict[str, Any]] = {}

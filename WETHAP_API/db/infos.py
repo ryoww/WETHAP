@@ -2,10 +2,10 @@ import datetime
 from decimal import Decimal
 
 import psycopg
-from utils.db_util import tableManager
+from utils.db_util import TableManager
 
 
-class infosManager(tableManager):
+class InfosManager(TableManager):
     INFO_TABLE_TYPES = tuple[
         int,
         str,

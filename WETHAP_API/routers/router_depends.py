@@ -12,11 +12,11 @@ class Info(BaseModel):
     pressure: float
 
 
-class requestInfo(BaseModel):
+class RequestInfo(BaseModel):
     labID: str
 
 
-class requestChange(BaseModel):
+class RequestChange(BaseModel):
     id: int | None = None
     before_labID: str | None = None
     after_labID: str

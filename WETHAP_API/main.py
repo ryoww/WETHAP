@@ -73,7 +73,7 @@ async def run_at(schedule_times: list[datetime.time]):
 
 async def keep_connection():
     while True:
-        await asyncio.sleep(5 * 60)
+        await asyncio.sleep(1 * 60)
         await ws_manager.broadcast({"message": "keep connection"})
 
 
