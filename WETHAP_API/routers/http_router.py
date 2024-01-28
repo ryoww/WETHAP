@@ -99,7 +99,7 @@ async def post_info(info: Info, response: Response):
         return {"status": "failed"}
 
 
-@router.get("/is-registered")
+@router.get("/registered")
 async def get_is_registered(labID: str):
     response = infos_manager.is_registered(labID)
     return "true" if response else "false"
