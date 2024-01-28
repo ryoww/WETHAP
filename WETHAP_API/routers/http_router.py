@@ -140,7 +140,7 @@ async def patch_lab_ids(request: RequestChange, response: Response):
         return "before_labID is an non-existent labID."
 
 
-@router.get("/active-rooms")
+@router.get("/rooms")
 async def get_active_rooms():
     print(ws_manager.connection_infos)
     response = [
