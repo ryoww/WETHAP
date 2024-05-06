@@ -140,6 +140,9 @@ async def patch_lab_ids(request: RequestChange, response: Response):
     elif request.after_labID is None:
         response.status_code = status.HTTP_400_BAD_REQUEST
         return "after_labID is required."
+    elif request.before_labID not in sender_manager.get_all_lab_id():
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return "before_labID does not exist."
     elif request.after_labID in sender_manager.get_all_lab_id():
         response.status_code = status.HTTP_400_BAD_REQUEST
         return "after_labID already exists."
@@ -164,11 +167,7 @@ async def patch_lab_ids(request: RequestChange, response: Response):
 
 @router.get("/rooms")
 async def get_active_rooms():
-    response = [
-        info["labID"]
-        for info in ws_manager.connection_infos.values()
-        if info.get("labID")
-    ]
+    response = ws_manager.active_rooms
     return response if response else "NoActiveRooms"
 
 
