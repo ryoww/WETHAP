@@ -112,7 +112,6 @@ async def delete_info(id: int, response: Response):
     print(f"delete info request: {id=}")
     try:
         infos_manager.remove(id=id)
-        response.status_code = status.HTTP_204_NO_CONTENT
         return {"status": "deleted", "id": id}
     except psycopg.DatabaseError as error:
         print(error)
@@ -156,7 +155,6 @@ async def patch_lab_ids(request: RequestChange, response: Response):
             id=request.id,
             before_lab_id=request.before_labID,
         )
-        response.status_code = status.HTTP_204_NO_CONTENT
         return {"status": "labID changed."}
     except psycopg.DatabaseError as error:
         print(error)
