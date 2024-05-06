@@ -7,14 +7,6 @@ from machine import ADC, I2C, Pin, reset
 import env
 from sender import Config, Sender
 
-led = Pin("LED", Pin.OUT, value=True)
-i2c = I2C(0, sda=Pin(16, pull=Pin.PULL_UP), scl=Pin(17, pull=Pin.PULL_UP))
-temp_adj = ADC(0)
-humid_adj = ADC(1)
-config = Config()
-config.load_env(env)
-master = Sender(config=config, led=led, i2c=i2c, temp_adj=temp_adj, humid_adj=humid_adj)
-
 
 async def init():
     async with master.lock:
@@ -77,12 +69,13 @@ async def keep_connection_loop(interval=60):
 async def wifi_connection_loop():
     while True:
         if not master.wifi.isconnected():
-            master.led.off()
-            await master.wifi_connect()
-            if not master.wifi.isconnected():
-                await asyncio.sleep_ms(config.wifi_delay)
-            else:
-                master.led.on()
+            with master.lock():
+                master.led.off()
+                await master.wifi_connect()
+                if not master.wifi.isconnected():
+                    await asyncio.sleep_ms(config.wifi_delay)
+                else:
+                    master.led.on()
         await asyncio.sleep(1)
 
 
@@ -160,4 +153,11 @@ async def main():
         reset()
 
 
+led = Pin("LED", Pin.OUT, value=True)
+i2c = I2C(0, sda=Pin(16, pull=Pin.PULL_UP), scl=Pin(17, pull=Pin.PULL_UP))
+temp_adj = ADC(0)
+humid_adj = ADC(1)
+config = Config()
+config.load_env(env)
+master = Sender(config=config, led=led, i2c=i2c, temp_adj=temp_adj, humid_adj=humid_adj)
 asyncio.run(main())

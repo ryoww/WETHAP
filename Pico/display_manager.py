@@ -1,5 +1,12 @@
-import ssd1306
 from machine import I2C
+
+try:
+    import ssd1306
+except ImportError:
+    import package
+
+    package.install_requirements()
+    import ssd1306
 
 
 class DisplayManager:
