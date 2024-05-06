@@ -70,4 +70,6 @@ class SenderWebsocketManager(WebsocketManager):
             if self.connection_infos[ws]["labID"] == before:
                 await ws.send_json({"message": "change labID", "new labID": after})
                 self.connection_infos[ws]["labID"] = after
+                self.active_rooms.remove(before)
+                self.active_rooms.append(after)
                 print(f"send change labID {before} to {after}")
