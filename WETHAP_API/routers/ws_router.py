@@ -4,8 +4,8 @@ import os
 import dotenv
 from fastapi import APIRouter
 from fastapi.websockets import WebSocket, WebSocketDisconnect
-from fetchWeather import fetchWeather
 from managers import infos_manager, sender_manager, ws_manager
+from utils.fetch_weather import fetchWeather
 
 dotenv.load_dotenv()
 prefix = f"{os.environ.get('PREFIX')}/ws"

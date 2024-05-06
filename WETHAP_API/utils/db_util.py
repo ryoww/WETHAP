@@ -11,7 +11,7 @@ class TableManager(ABC):
         conninfo: str,
         **kwargs,
     ) -> None:
-        """postgresql
+        """postgresql用table操作基底クラス
 
         Args:
             table (str): テーブル名
@@ -129,6 +129,7 @@ class TableManager(ABC):
     def close(self) -> None:
         """DBを保存し切断"""
         self.cursor.close()
+        self.dict_cursor.close()
         self.connection.commit()
         self.connection.close()
 

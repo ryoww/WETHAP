@@ -3,8 +3,8 @@ import os
 
 import dotenv
 from fastapi import APIRouter, Response, status
-from fetchWeather import fetchWeather
 from managers import infos_manager, sender_manager, ws_manager
+from utils.fetch_weather import fetchWeather
 
 from routers.router_depends import Info, RequestChange, RequestInfo
 
