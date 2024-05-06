@@ -1,6 +1,5 @@
 import datetime
 
-import psycopg
 from utils.db_util import TableManager
 
 
@@ -20,7 +19,7 @@ class SenderManager(TableManager):
         self.cursor.execute(
             f"""
             CREATE TABLE IF NOT EXISTS {self.table} (
-                id serial PRIMARY KEY NOT NULL,
+                id serial PRIMARY KEY,
                 uuid text UNIQUE NOT NULL,
                 lab_id text UNIQUE,
                 create_at timestamptz NOT NULL DEFAULT current_timestamp,
@@ -30,49 +29,31 @@ class SenderManager(TableManager):
         )
         self.connection.commit()
 
-    def insert(self, uuid: str, lab_id: str):
-        try:
-            self.cursor.execute(
-                f"""
+    def _insert(self, uuid: str, lab_id: str) -> tuple[str, tuple]:
+        query = f"""
                 INSERT INTO {self.table} (uuid, lab_id)
                 VALUES (%s, %s)
-                """,
-                (uuid, lab_id),
-            )
-        except psycopg.errors.DatabaseError:
-            self.connection.rollback()
-            return False
-        else:
-            self.connection.commit()
-            return True
+                """
+        params = (uuid, lab_id)
+        return query, params
 
-    def update(self, id: int, after_lab_id: str):
-        try:
-            self.cursor.execute(
-                f"""
+    def _update(self, id: int, after_lab_id: str) -> tuple[str, tuple]:
+        query = f"""
                 UPDATE {self.table} SET
                 lab_id = %s,
                 update_at = current_timestamp
                 WHERE id = %s
-                """,
-                (after_lab_id, id),
-            )
-            self.connection.commit()
-        except psycopg.errors.DatabaseError:
-            self.connection.rollback()
-            return False
-        else:
-            return True
+                """
+        params = (after_lab_id, id)
+        return query, params
 
-    def remove(self, uuid: str):
-        self.cursor.execute(
-            f"""
+    def _remove(self, uuid: str) -> tuple[str, tuple]:
+        query = f"""
             DELETE FROM {self.table}
             WHERE uuid = %s
-            """,
-            (uuid,),
-        )
-        self.connection.commit()
+            """
+        params = (uuid,)
+        return query, params
 
     def select(
         self, id: int = None, uuid: str = None, lab_id: str = None, wrap: bool = False
@@ -142,11 +123,4 @@ class SenderManager(TableManager):
             """
             params = (after_lab_id, id)
 
-        try:
-            self.cursor.execute(query, params)
-            self.connection.commit()
-        except psycopg.errors.DatabaseError:
-            self.connection.rollback()
-            return False
-        else:
-            return True
+        self.transaction(query, params)

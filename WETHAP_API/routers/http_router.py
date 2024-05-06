@@ -1,3 +1,4 @@
+import datetime
 import os
 
 import dotenv
@@ -20,17 +21,19 @@ async def index():
 @router.post("/addInfo", status_code=status.HTTP_200_OK)
 async def add_info(info: Info, response: Response):
     print(f"addInfo request: {info}")
-    if infos_manager.insert(
-        lab_id=info.labID,
-        date=info.date,
-        num_gen=info.numGen,
-        temperature=info.temperature,
-        humidity=info.humidity,
-        pressure=info.pressure,
-        weather=fetchWeather(),
-    ):
-        return {"status": "added"}
-    else:
+    info = {
+        "lab_id": info.labID,
+        "date": info.date,
+        "num_gen": info.numGen,
+        "temperature": info.temperature,
+        "humidity": info.humidity,
+        "pressure": info.pressure,
+        "weather": fetchWeather(),
+    }
+    try:
+        infos_manager.insert(**info)
+        return {"status": "added", "info": info}
+    except Exception:
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {"status": "failed"}
 
@@ -84,17 +87,19 @@ async def get_info(labID: str, date: str, numGen: int):
 @router.post("/info", status_code=status.HTTP_200_OK)
 async def post_info(info: Info, response: Response):
     print(f"post info request: {info}")
-    if infos_manager.insert(
-        lab_id=info.labID,
-        date=info.date,
-        num_gen=info.numGen,
-        temperature=info.temperature,
-        humidity=info.humidity,
-        pressure=info.pressure,
-        weather=fetchWeather(),
-    ):
-        return {"status": "added"}
-    else:
+    info = {
+        "lab_id": info.labID,
+        "date": info.date,
+        "num_gen": info.numGen,
+        "temperature": info.temperature,
+        "humidity": info.humidity,
+        "pressure": info.pressure,
+        "weather": fetchWeather(),
+    }
+    try:
+        infos_manager.insert(**info)
+        return {"status": "added", "info": info}
+    except Exception:
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {"status": "failed"}
 
@@ -123,19 +128,20 @@ async def patch_lab_ids(request: RequestChange, response: Response):
     elif request.after_labID in sender_manager.get_all_lab_id():
         response.status_code = status.HTTP_400_BAD_REQUEST
         return "after_labID already exists."
-    if sender_manager.change_lab_id(
-        after_lab_id=request.after_labID,
-        id=request.id,
-        before_lab_id=request.before_labID,
-    ):
+    try:
         before = (
             sender_manager.get_lab_id(request.id)
             if request.before_labID is None
             else request.before_labID
         )
         await ws_manager.send_change_lab_id(before, request.after_labID)
+        sender_manager.change_lab_id(
+            after_lab_id=request.after_labID,
+            id=request.id,
+            before_lab_id=request.before_labID,
+        )
         return "labID changed."
-    else:
+    except Exception:
         response.status_code = status.HTTP_400_BAD_REQUEST
         return "before_labID is an non-existent labID."
 
@@ -155,8 +161,24 @@ async def get_active_rooms():
 async def post_request_info(request: RequestInfo, response: Response):
     print(f"receive request {request.labID}")
     if request.labID in ws_manager.active_rooms:
-        await ws_manager.send_request_info(request.labID)
-        return {"status": "request sended"}
+        data = await ws_manager.send_request_info(request.labID)
+        if (info := data.get("info")) is not None:
+            try:
+                infos_manager.insert(
+                    lab_id=info["labID"],
+                    date=info.get("date", str(datetime.date.today())),
+                    num_gen=info.get("numGen"),
+                    temperature=info["temperature"],
+                    humidity=info["humidity"],
+                    pressure=info["pressure"],
+                    weather=fetchWeather(),
+                )
+                result = {"status": "success", "info": {info}}
+                print(result)
+                return result
+            except Exception:
+                return {"status": "failed"}
+        return {"status": "bad response from sender"}
     else:
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {"status": "non active room"}

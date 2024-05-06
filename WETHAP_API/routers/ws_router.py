@@ -16,12 +16,18 @@ def prepare(data):
     if (record := sender_manager.select(uuid=data["uuid"], wrap=True)) is not None:
         return record["lab_id"]
     elif data["labID"] not in sender_manager.get_all_lab_id():
-        sender_manager.insert(uuid=data["uuid"], lab_id=data["labID"])
+        try:
+            sender_manager.insert(uuid=data["uuid"], lab_id=data["labID"])
+        except Exception:
+            pass
         return data["labID"]
     else:
         new_id = sender_manager.get_all()[-1]["id"] + 1
         dummy_lab_id = f"dummy{new_id}"
-        sender_manager.insert(uuid=data["uuid"], lab_id=dummy_lab_id)
+        try:
+            sender_manager.insert(uuid=data["uuid"], lab_id=dummy_lab_id)
+        except Exception:
+            pass
         return dummy_lab_id
 
 
@@ -45,16 +51,20 @@ async def websocket_endpoint(websocket: WebSocket):
         while True:
             data = await websocket.receive_json()
             if (info := data.get("info")) is not None:
-                result = infos_manager.insert(
-                    lab_id=info["labID"],
-                    date=info.get("date", str(datetime.date.today())),
-                    num_gen=info.get("numGen"),
-                    temperature=info["temperature"],
-                    humidity=info["humidity"],
-                    pressure=info["pressure"],
-                    weather=fetchWeather(),
-                )
-                print(f"status: {result}, data: {data}")
+                try:
+                    infos_manager.insert(
+                        lab_id=info["labID"],
+                        date=info.get("date", str(datetime.date.today())),
+                        num_gen=info.get("numGen"),
+                        temperature=info["temperature"],
+                        humidity=info["humidity"],
+                        pressure=info["pressure"],
+                        weather=fetchWeather(),
+                    )
+                    result = {"status": "success", "info": {info}}
+                    print(result)
+                except Exception:
+                    print({"status": "failed"})
 
     except WebSocketDisconnect:
         ws_manager.disconnect(websocket)

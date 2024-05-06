@@ -11,7 +11,7 @@ class TableManager(ABC):
         conninfo: str,
         **kwargs,
     ) -> None:
-        """init
+        """postgresql
 
         Args:
             table (str): テーブル名
@@ -30,6 +30,7 @@ class TableManager(ABC):
         self.cursor.execute(
             f"""
             CREATE TABLE IF NOT EXISTS {self.table} (
+                id serial PRIMARY KEY,
                 create_at timestamptz NOT NULL DEFAULT current_timestamp,
                 update_at timestamptz NOT NULL DEFAULT current_timestamp
             )
@@ -58,44 +59,28 @@ class TableManager(ABC):
             records = self.cursor.fetchall()
         return records
 
-    @abstractmethod
-    def insert(self) -> bool:
-        """レコードを追加"""
-        raise NotImplementedError
+    def transaction(self, query, params):
         try:
-            self.cursor.execute(
-                f"""
-                INSERT INTO {self.table} ( )
-                VALUES ( )
-                """,
-                (),
-            )
+            self.cursor.execute(query, params)
             self.connection.commit()
-        except psycopg.errors.DatabaseError:
+        except psycopg.DatabaseError as error:
             self.connection.rollback()
-            return False
-        else:
-            return True
+            raise error
 
-    @abstractmethod
-    def update(self) -> bool:
+    def insert(self):
+        """レコードを追加"""
+        query, params = self._insert()
+        self.transaction(query, params)
+
+    def update(self):
         """レコードを更新"""
-        raise NotImplementedError
-        try:
-            self.cursor.execute(
-                f"""
-                UPDATE {self.table} SET
-                update_at = current_timestamp
-                WHERE
-                """,
-                (),
-            )
-            self.connection.commit()
-        except psycopg.errors.DatabaseError:
-            self.connection.rollback()
-            return False
-        else:
-            return True
+        query, params = self._update()
+        self.transaction(query, params)
+
+    def remove(self):
+        """条件に合うレコードを削除"""
+        query, params = self._remove()
+        self.transaction(query, params)
 
     @abstractmethod
     def select(self) -> tuple:
@@ -111,17 +96,35 @@ class TableManager(ABC):
         return self.cursor.fetchone()
 
     @abstractmethod
-    def remove(self) -> None:
-        """条件に合うレコードを削除"""
+    def _insert(self) -> tuple[str, tuple]:
         raise NotImplementedError
-        self.cursor.execute(
-            f"""
+        query = f"""
+                INSERT INTO {self.table} ( )
+                VALUES ( )
+                """
+        params = ()
+        return query, params
+
+    @abstractmethod
+    def _update(self) -> tuple[str, tuple]:
+        raise NotImplementedError
+        query = f"""
+                UPDATE {self.table} SET
+                update_at = current_timestamp
+                WHERE
+                """
+        params = ()
+        return query, params
+
+    @abstractmethod
+    def _remove(self) -> tuple[str, tuple]:
+        raise NotImplementedError
+        query = f"""
             DELETE FROM {self.table}
             WHERE
-            """,
-            (),
-        )
-        self.connection.commit()
+            """
+        params = ()
+        return query, params
 
     def close(self) -> None:
         """DBを保存し切断"""

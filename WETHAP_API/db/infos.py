@@ -1,7 +1,6 @@
 import datetime
 from decimal import Decimal
 
-import psycopg
 from utils.db_util import TableManager
 
 
@@ -45,90 +44,6 @@ class InfosManager(TableManager):
         )
         self.connection.commit()
 
-    def insert(
-        self,
-        lab_id: str,
-        date: str,
-        num_gen: int,
-        temperature: float,
-        humidity: float,
-        pressure: float,
-        weather: str,
-    ) -> bool:
-        """レコードを追加
-
-        Args:
-            lab_id (str): 研究室名
-            date (str): 日付 (YYYY-MM-DD形式)
-            num_gen (int): 時限
-            temperature (float): 温度
-            humidity (float): 湿度
-            pressure (float): 気圧
-            weather (str): 天気
-        """
-        try:
-            self.cursor.execute(
-                f"""
-                INSERT INTO {self.table} (
-                    lab_id, date, num_gen, temperature, humidity, pressure, weather
-                )
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
-                """,
-                (lab_id, date, num_gen, temperature, humidity, pressure, weather),
-            )
-            self.connection.commit()
-        except psycopg.errors.DatabaseError:
-            self.connection.rollback()
-            return False
-        else:
-            return True
-
-    def update(
-        self,
-        id: int,
-        lab_id: str,
-        date: str,
-        num_gen: int,
-        temperature: float,
-        humidity: float,
-        pressure: float,
-        weather: str,
-    ) -> bool:
-        """レコードを更新
-
-        Args:
-            id (int): 変更したいレコードのid
-            lab_id (str): 研究室名
-            date (str): 日付 (YYYY-MM-DD形式)
-            num_gen (int): 時限
-            temperature (float): 温度
-            humidity (float): 湿度
-            pressure (float): 気圧
-            weather (str): 天気
-        """
-        try:
-            self.cursor.execute(
-                f"""
-                UPDATE {self.table} SET
-                lab_id = %s,
-                date = %s,
-                num_gen = %s,
-                temperature = %s,
-                humidity = %s,
-                pressure = %s,
-                weather = %s,
-                update_at = current_timestamp
-                WHERE id = %s
-                """,
-                (lab_id, date, num_gen, temperature, humidity, pressure, weather, id),
-            )
-            self.connection.commit()
-        except psycopg.errors.DatabaseError:
-            self.connection.rollback()
-            return False
-        else:
-            return True
-
     def select(self, lab_id: str, date: str, num_gen: int) -> INFO_TABLE_TYPES:
         """条件に合うレコードを取得
 
@@ -152,15 +67,81 @@ class InfosManager(TableManager):
         record = self.cursor.fetchone()
         return record
 
-    def remove(self, lab_id: str, date: str, num_gen: int):
-        self.cursor.execute(
-            f"""
-            DELETE FROM {self.table}
-            WHERE lab_id = %s AND date = %s AND num_gen = %s
-            """,
-            (lab_id, date, num_gen),
-        )
-        self.connection.commit()
+    def _insert(
+        self,
+        lab_id: str,
+        date: str,
+        num_gen: int | None,
+        temperature: float,
+        humidity: float,
+        pressure: float,
+        weather: str,
+    ) -> tuple[str, tuple]:
+        """レコードを追加
+
+        Args:
+            lab_id (str): 研究室名
+            date (str): 日付 (YYYY-MM-DD形式)
+            num_gen (int): 時限
+            temperature (float): 温度
+            humidity (float): 湿度
+            pressure (float): 気圧
+            weather (str): 天気
+        """
+        query = f"""
+                INSERT INTO {self.table} (
+                    lab_id, date, num_gen, temperature, humidity, pressure, weather
+                )
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """
+        params = (lab_id, date, num_gen, temperature, humidity, pressure, weather)
+        return query, params
+
+    def _update(
+        self,
+        id: int,
+        lab_id: str,
+        date: str,
+        num_gen: int,
+        temperature: float,
+        humidity: float,
+        pressure: float,
+        weather: str,
+    ) -> tuple[str, tuple]:
+        """レコードを更新
+
+        Args:
+            id (int): 変更したいレコードのid
+            lab_id (str): 研究室名
+            date (str): 日付 (YYYY-MM-DD形式)
+            num_gen (int): 時限
+            temperature (float): 温度
+            humidity (float): 湿度
+            pressure (float): 気圧
+            weather (str): 天気
+        """
+        query = f"""
+                UPDATE {self.table} SET
+                lab_id = %s,
+                date = %s,
+                num_gen = %s,
+                temperature = %s,
+                humidity = %s,
+                pressure = %s,
+                weather = %s,
+                update_at = current_timestamp
+                WHERE id = %s
+                """
+        params = (lab_id, date, num_gen, temperature, humidity, pressure, weather, id)
+        return query, params
+
+    def _remove(self, lab_id: str, date: str, num_gen: int) -> tuple[str, tuple]:
+        query = f"""
+                DELETE FROM {self.table}
+                WHERE lab_id = %s AND date = %s AND num_gen = %s
+                """
+        params = (lab_id, date, num_gen)
+        return query, params
 
     def is_registered(self, lab_id: str) -> bool:
         """登録済みの研究室か
