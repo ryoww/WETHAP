@@ -6,6 +6,7 @@ from pydantic import BaseModel
 class Info(BaseModel):
     labID: str
     date: str = str(datetime.date.today())
+    time: str = None
     numGen: int = None
     temperature: float
     humidity: float

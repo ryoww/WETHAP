@@ -63,9 +63,7 @@ class SenderWebsocketManager(WebsocketManager):
         for ws in self.active_connections:
             if self.connection_infos[ws]["labID"] == lab_id:
                 await ws.send_json({"message": "request info"})
-                response = await ws.receive_json()
                 print(f"send request to {lab_id}")
-                return response
 
     async def send_change_lab_id(self, before, after):
         for ws in self.active_connections:

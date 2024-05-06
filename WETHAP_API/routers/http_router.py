@@ -1,11 +1,10 @@
-import datetime
 import os
 
 import dotenv
 from fastapi import APIRouter, Response, status
 from managers import infos_manager, sender_manager, ws_manager
-from utils.fetch_weather import fetchWeather
-
+from utils.fetch_weather import fetch_weather
+import psycopg
 from routers.router_depends import Info, RequestChange, RequestInfo
 
 dotenv.load_dotenv()
@@ -24,16 +23,18 @@ async def add_info(info: Info, response: Response):
     info = {
         "lab_id": info.labID,
         "date": info.date,
+        "time": info.time,
         "num_gen": info.numGen,
         "temperature": info.temperature,
         "humidity": info.humidity,
         "pressure": info.pressure,
-        "weather": fetchWeather(),
+        "weather": fetch_weather(),
     }
     try:
         infos_manager.insert(**info)
         return {"status": "added", "info": info}
-    except Exception:
+    except psycopg.DatabaseError as error:
+        print(error)
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {"status": "failed"}
 
@@ -90,16 +91,31 @@ async def post_info(info: Info, response: Response):
     info = {
         "lab_id": info.labID,
         "date": info.date,
+        "time": info.time,
         "num_gen": info.numGen,
         "temperature": info.temperature,
         "humidity": info.humidity,
         "pressure": info.pressure,
-        "weather": fetchWeather(),
+        "weather": fetch_weather(),
     }
     try:
         infos_manager.insert(**info)
         return {"status": "added", "info": info}
-    except Exception:
+    except psycopg.DatabaseError as error:
+        print(error)
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {"status": "failed"}
+
+
+@router.delete("/info", status_code=status.HTTP_200_OK)
+async def delete_info(id: int, response: Response):
+    print(f"delete info request: {id=}")
+    try:
+        infos_manager.remove(id=id)
+        response.status_code = status.HTTP_204_NO_CONTENT
+        return {"status": "deleted", "id": id}
+    except psycopg.DatabaseError as error:
+        print(error)
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {"status": "failed"}
 
@@ -140,15 +156,16 @@ async def patch_lab_ids(request: RequestChange, response: Response):
             id=request.id,
             before_lab_id=request.before_labID,
         )
-        return "labID changed."
-    except Exception:
+        response.status_code = status.HTTP_204_NO_CONTENT
+        return {"status": "labID changed."}
+    except psycopg.DatabaseError as error:
+        print(error)
         response.status_code = status.HTTP_400_BAD_REQUEST
         return "before_labID is an non-existent labID."
 
 
 @router.get("/rooms")
 async def get_active_rooms():
-    print(ws_manager.connection_infos)
     response = [
         info["labID"]
         for info in ws_manager.connection_infos.values()
@@ -161,24 +178,9 @@ async def get_active_rooms():
 async def post_request_info(request: RequestInfo, response: Response):
     print(f"receive request {request.labID}")
     if request.labID in ws_manager.active_rooms:
-        data = await ws_manager.send_request_info(request.labID)
-        if (info := data.get("info")) is not None:
-            try:
-                infos_manager.insert(
-                    lab_id=info["labID"],
-                    date=info.get("date", str(datetime.date.today())),
-                    num_gen=info.get("numGen"),
-                    temperature=info["temperature"],
-                    humidity=info["humidity"],
-                    pressure=info["pressure"],
-                    weather=fetchWeather(),
-                )
-                result = {"status": "success", "info": {info}}
-                print(result)
-                return result
-            except Exception:
-                return {"status": "failed"}
-        return {"status": "bad response from sender"}
+        await ws_manager.send_request_info(request.labID)
+        response.status_code = status.HTTP_202_ACCEPTED
+        return {"status": f"request sent to {request.labID}"}
     else:
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {"status": "non active room"}

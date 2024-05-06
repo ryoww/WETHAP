@@ -1,3 +1,4 @@
+import re
 from abc import ABC, abstractmethod
 
 import psycopg
@@ -59,27 +60,29 @@ class TableManager(ABC):
             records = self.cursor.fetchall()
         return records
 
-    def transaction(self, query, params):
+    def transaction(self, query: str, params):
         try:
             self.cursor.execute(query, params)
             self.connection.commit()
         except psycopg.DatabaseError as error:
+            query = re.sub("\n *", " ", query)
+            print(f"transaction error: {query=}, {params=}")
             self.connection.rollback()
             raise error
 
-    def insert(self):
+    def insert(self, *args, **kwargs):
         """レコードを追加"""
-        query, params = self._insert()
+        query, params = self._insert(*args, **kwargs)
         self.transaction(query, params)
 
-    def update(self):
+    def update(self, *args, **kwargs):
         """レコードを更新"""
-        query, params = self._update()
+        query, params = self._update(*args, **kwargs)
         self.transaction(query, params)
 
-    def remove(self):
+    def remove(self, *args, **kwargs):
         """条件に合うレコードを削除"""
-        query, params = self._remove()
+        query, params = self._remove(*args, **kwargs)
         self.transaction(query, params)
 
     @abstractmethod

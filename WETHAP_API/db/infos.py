@@ -9,6 +9,7 @@ class InfosManager(TableManager):
         int,
         str,
         datetime.date,
+        datetime.time,
         int,
         Decimal,
         Decimal,
@@ -105,6 +106,7 @@ class InfosManager(TableManager):
         id: int,
         lab_id: str,
         date: str,
+        time: str,
         num_gen: int,
         temperature: float,
         humidity: float,
@@ -117,6 +119,7 @@ class InfosManager(TableManager):
             id (int): 変更したいレコードのid
             lab_id (str): 研究室名
             date (str): 日付 (YYYY-MM-DD形式)
+            time (str): 時刻
             num_gen (int): 時限
             temperature (float): 温度
             humidity (float): 湿度
@@ -127,6 +130,7 @@ class InfosManager(TableManager):
                 UPDATE {self.table} SET
                 lab_id = %s,
                 date = %s,
+                time = %s
                 num_gen = %s,
                 temperature = %s,
                 humidity = %s,
@@ -135,15 +139,25 @@ class InfosManager(TableManager):
                 update_at = current_timestamp
                 WHERE id = %s
                 """
-        params = (lab_id, date, num_gen, temperature, humidity, pressure, weather, id)
+        params = (
+            lab_id,
+            date,
+            time,
+            num_gen,
+            temperature,
+            humidity,
+            pressure,
+            weather,
+            id,
+        )
         return query, params
 
-    def _remove(self, lab_id: str, date: str, num_gen: int) -> tuple[str, tuple]:
+    def _remove(self, id: int) -> tuple[str, tuple]:
         query = f"""
                 DELETE FROM {self.table}
-                WHERE lab_id = %s AND date = %s AND num_gen = %s
+                WHERE id = %s
                 """
-        params = (lab_id, date, num_gen)
+        params = (id,)
         return query, params
 
     def is_registered(self, lab_id: str) -> bool:
@@ -182,7 +196,7 @@ class InfosManager(TableManager):
         """
         self.cursor.execute(
             f"""
-            SELECT lab_id, date, num_gen, temperature, humidity, pressure, weather
+            SELECT lab_id, date, time, num_gen, temperature, humidity, pressure, weather
             FROM {self.table} ORDER BY id
             """
         )

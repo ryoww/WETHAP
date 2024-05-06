@@ -2,10 +2,11 @@ import datetime
 import os
 
 import dotenv
+import psycopg
 from fastapi import APIRouter
 from fastapi.websockets import WebSocket, WebSocketDisconnect
 from managers import infos_manager, sender_manager, ws_manager
-from utils.fetch_weather import fetchWeather
+from utils.fetch_weather import fetch_weather
 
 dotenv.load_dotenv()
 prefix = f"{os.environ.get('PREFIX')}/ws"
@@ -18,16 +19,16 @@ def prepare(data):
     elif data["labID"] not in sender_manager.get_all_lab_id():
         try:
             sender_manager.insert(uuid=data["uuid"], lab_id=data["labID"])
-        except Exception:
-            pass
+        except psycopg.DatabaseError as error:
+            print(error)
         return data["labID"]
     else:
         new_id = sender_manager.get_all()[-1]["id"] + 1
         dummy_lab_id = f"dummy{new_id}"
         try:
             sender_manager.insert(uuid=data["uuid"], lab_id=dummy_lab_id)
-        except Exception:
-            pass
+        except psycopg.DatabaseError as error:
+            print(error)
         return dummy_lab_id
 
 
@@ -55,15 +56,17 @@ async def websocket_endpoint(websocket: WebSocket):
                     infos_manager.insert(
                         lab_id=info["labID"],
                         date=info.get("date", str(datetime.date.today())),
+                        time=info.get("time"),
                         num_gen=info.get("numGen"),
                         temperature=info["temperature"],
                         humidity=info["humidity"],
                         pressure=info["pressure"],
-                        weather=fetchWeather(),
+                        weather=fetch_weather(),
                     )
-                    result = {"status": "success", "info": {info}}
+                    result = {"status": "success", "info": {str(info)}}
                     print(result)
-                except Exception:
+                except psycopg.DatabaseError as error:
+                    print(error)
                     print({"status": "failed"})
 
     except WebSocketDisconnect:
