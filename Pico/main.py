@@ -40,6 +40,8 @@ async def send_info_loop():
             info.update(master.get_info())
             if data.get("numGen") is not None:
                 info["numGen"] = data.get("numGen")
+            else:
+                info["time"] = master.now_time()
             message = {"status": "send info", "info": info}
             await master.ws.send(json.dumps(message))
             print(f"Sent from Client: {message}")

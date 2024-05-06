@@ -21,7 +21,7 @@ class Config:
         self.adjust_temp_range = adjust_temp_range
         self.adjust_humid_range = adjust_humid_range
 
-    def load_env(self, env):
+    def load_env(self, env) -> None:
         self.labID = env.LAB_ID
 
         self.wifi_ssid = env.SSID
@@ -57,7 +57,7 @@ class Sender:
         self.display = DisplayManager(self.i2c)
         self.lock = asyncio.Lock()
 
-    def init_sensor(self):
+    def init_sensor(self) -> None:
         """センサ初期化"""
         try:
             self.collector = EnvCollector(self.i2c)
@@ -120,7 +120,7 @@ class Sender:
             print("rtc time update failed")
             return False
 
-    async def update_time(self):
+    async def update_time(self) -> None:
         if not self.wifi.isconnected():
             await self.wifi_connect()
         try:
@@ -138,7 +138,7 @@ class Sender:
             print("clock update by NTP success")
             self.display.multi_text("time update", "success")
 
-    def get_info(self):
+    def get_info(self) -> dict:
         envs = self.collector.collect_envs()
         envs["temperature"] += (
             (self.temp_adj.read_u16() / 65535 - 0.5) * 2 * self.config.adjust_temp_range
@@ -150,7 +150,7 @@ class Sender:
         )
         return envs
 
-    def now(self):
+    def now(self) -> tuple:
         now = list(self.rtc.datetime())
         now[4] += self.config.timezone
         if now[4] >= 24:
@@ -158,3 +158,8 @@ class Sender:
             now[2] += 1
         now = tuple(now)
         return now
+
+    def now_time(self) -> str:
+        now = self.now()
+        time = f"{now[4]:02}:{now[5]:02}:{now[6]:02}"
+        return time
