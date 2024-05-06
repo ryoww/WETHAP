@@ -36,7 +36,10 @@ class SenderWebsocketManager(WebsocketManager):
     def __init__(self) -> None:
         super().__init__()
         self.connection_infos: dict[WebSocket, dict[str, Any]] = {}
-        self.active_rooms: list[str] = []
+
+    @property
+    def active_rooms(self):
+        return [info["labID"] for info in self.connection_infos.values()]
 
     async def connect(self, websocket: WebSocket):
         await super().connect(websocket)
@@ -45,19 +48,9 @@ class SenderWebsocketManager(WebsocketManager):
     def disconnect(self, websocket: WebSocket):
         super().disconnect(websocket)
         del self.connection_infos[websocket]
-        self.update_active_rooms()
 
     def update_info(self, websocket: WebSocket, info: dict):
         self.connection_infos[websocket].update(info)
-        if (lab_id := info.get("labID")) is not None:
-            self.active_rooms.append(lab_id)
-
-    def update_active_rooms(self):
-        self.active_rooms = [
-            info.get("labID")
-            for info in self.connection_infos.values()
-            if info.get("labID")
-        ]
 
     async def send_request_info(self, lab_id: str):
         for ws in self.active_connections:
@@ -70,6 +63,4 @@ class SenderWebsocketManager(WebsocketManager):
             if self.connection_infos[ws]["labID"] == before:
                 await ws.send_json({"message": "change labID", "new labID": after})
                 self.connection_infos[ws]["labID"] = after
-                self.active_rooms.remove(before)
-                self.active_rooms.append(after)
                 print(f"send change labID {before} to {after}")
