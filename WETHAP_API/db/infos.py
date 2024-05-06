@@ -26,6 +26,7 @@ class InfosManager(TableManager):
                 id serial PRIMARY KEY,
                 lab_id text NOT NULL,
                 date date NOT NULL,
+                time time with time zone,
                 num_gen integer,
                 temperature numeric NOT NULL,
                 humidity numeric NOT NULL,
@@ -71,6 +72,7 @@ class InfosManager(TableManager):
         self,
         lab_id: str,
         date: str,
+        time: str | None,
         num_gen: int | None,
         temperature: float,
         humidity: float,
@@ -82,6 +84,7 @@ class InfosManager(TableManager):
         Args:
             lab_id (str): 研究室名
             date (str): 日付 (YYYY-MM-DD形式)
+            time (str): 時刻
             num_gen (int): 時限
             temperature (float): 温度
             humidity (float): 湿度
@@ -90,11 +93,11 @@ class InfosManager(TableManager):
         """
         query = f"""
                 INSERT INTO {self.table} (
-                    lab_id, date, num_gen, temperature, humidity, pressure, weather
+                    lab_id, date, time, num_gen, temperature, humidity, pressure, weather
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                 """
-        params = (lab_id, date, num_gen, temperature, humidity, pressure, weather)
+        params = (lab_id, date, time, num_gen, temperature, humidity, pressure, weather)
         return query, params
 
     def _update(
