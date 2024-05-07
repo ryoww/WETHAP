@@ -19,5 +19,6 @@ class RequestInfo(BaseModel):
 
 class RequestChange(BaseModel):
     id: int | None = None
+    identifier: str | None = None
     before_labID: str | None = None
     after_labID: str

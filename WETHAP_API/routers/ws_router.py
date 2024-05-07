@@ -18,7 +18,9 @@ def prepare(data):
         return record["lab_id"]
     elif data["labID"] not in sender_manager.get_all_lab_id():
         try:
-            sender_manager.insert(uuid=data["uuid"], lab_id=data["labID"])
+            sender_manager.insert(
+                uuid=data["uuid"], identifier=data["identifier"], lab_id=data["labID"]
+            )
         except psycopg.DatabaseError as error:
             print(error)
         return data["labID"]
@@ -26,7 +28,9 @@ def prepare(data):
         new_id = sender_manager.get_all()[-1]["id"] + 1
         dummy_lab_id = f"dummy{new_id}"
         try:
-            sender_manager.insert(uuid=data["uuid"], lab_id=dummy_lab_id)
+            sender_manager.insert(
+                uuid=data["uuid"], identifier=data["identifier"], lab_id=dummy_lab_id
+            )
         except psycopg.DatabaseError as error:
             print(error)
         return dummy_lab_id
@@ -36,9 +40,9 @@ def prepare(data):
 async def websocket_endpoint(websocket: WebSocket):
     await ws_manager.connect(websocket)
     try:
-        # NOTE: data = {"uuid": str, "labID": str, (...)}
+        # NOTE: data = {"uuid": str, "identifier": str, "labID": str, (...)}
         data = await websocket.receive_json()
-        if not (data.get("uuid") and data.get("labID")):
+        if not all(data.get(key) for key in ("uuid", "identifier", "labID")):
             print(f"disconnect ({data})")
             ws_manager.disconnect(websocket)
             await websocket.close(1007)

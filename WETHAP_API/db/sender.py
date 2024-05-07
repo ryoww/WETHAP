@@ -9,6 +9,7 @@ class SenderManager(TableManager):
         column_info = {
             "id": int,
             "uuid": str,
+            "identifier": str,
             "lab_id": str,
             "create_at": datetime.datetime,
             "update_at": datetime.datetime,
@@ -21,6 +22,7 @@ class SenderManager(TableManager):
             CREATE TABLE IF NOT EXISTS {self.table} (
                 id serial PRIMARY KEY,
                 uuid text UNIQUE NOT NULL,
+                identifier text UNIQUE NOT NULL,
                 lab_id text UNIQUE,
                 create_at timestamptz NOT NULL DEFAULT current_timestamp,
                 update_at timestamptz NOT NULL DEFAULT current_timestamp
@@ -29,12 +31,12 @@ class SenderManager(TableManager):
         )
         self.connection.commit()
 
-    def _insert(self, uuid: str, lab_id: str) -> tuple[str, tuple]:
+    def _insert(self, uuid: str, identifier: str, lab_id: str) -> tuple[str, tuple]:
         query = f"""
-                INSERT INTO {self.table} (uuid, lab_id)
-                VALUES (%s, %s)
+                INSERT INTO {self.table} (uuid, identifier, lab_id)
+                VALUES (%s, %s, %s)
                 """
-        params = (uuid, lab_id)
+        params = (uuid, identifier, lab_id)
         return query, params
 
     def _update(self, id: int, after_lab_id: str) -> tuple[str, tuple]:
@@ -49,14 +51,19 @@ class SenderManager(TableManager):
 
     def _remove(self, uuid: str) -> tuple[str, tuple]:
         query = f"""
-            DELETE FROM {self.table}
-            WHERE uuid = %s
-            """
+                DELETE FROM {self.table}
+                WHERE uuid = %s
+                """
         params = (uuid,)
         return query, params
 
     def select(
-        self, id: int = None, uuid: str = None, lab_id: str = None, wrap: bool = False
+        self,
+        id: int = None,
+        uuid: str = None,
+        identifier: str = None,
+        lab_id: str = None,
+        wrap: bool = False,
     ):
         input_query = []
         input_params = []
@@ -66,6 +73,9 @@ class SenderManager(TableManager):
         if uuid is not None:
             input_query.append("uuid = %s")
             input_params.append(uuid)
+        if identifier is not None:
+            input_query.append("identifier = %s")
+            input_params.append(identifier)
         if lab_id is not None:
             input_query.append("lab_id = %s")
             input_params.append(lab_id)
@@ -103,24 +113,23 @@ class SenderManager(TableManager):
         lab_ids = [record[0] for record in records]
         return lab_ids
 
-    def change_lab_id(
-        self, after_lab_id: str, id: int = None, before_lab_id: str = None
-    ):
-        if id is None != before_lab_id is None:
-            raise ValueError("need to input either id or before_lab_id")
-        if id is None:
-            query = f"""
-            UPDATE {self.table} SET
-            lab_id = %s, update_at = current_timestamp
-            WHERE lab_id = %s
-            """
-            params = (after_lab_id, before_lab_id)
-        else:
-            query = f"""
-            UPDATE {self.table} SET
-            lab_id = %s, update_at = current_timestamp
-            WHERE id = %s
-            """
-            params = (after_lab_id, id)
+    def change_lab_id(self, before_lab_id: str, after_lab_id: str):
+        query = f"""
+                UPDATE {self.table} SET
+                lab_id = %s, update_at = current_timestamp
+                WHERE lab_id = %s
+                """
+        params = (after_lab_id, before_lab_id)
 
         self.transaction(query, params)
+
+    def get_lab_id_from_identifier(self, identifier: str):
+        self.cursor.execute(
+            f"""
+            SELECT lab_id FROM {self.table}
+            WHERE identifier = %s
+            """,
+            (identifier,),
+        )
+        record = self.cursor.fetchone()[0]
+        return record

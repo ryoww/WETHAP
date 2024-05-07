@@ -133,31 +133,39 @@ async def get_lab_ids():
 
 @router.patch("/lab-ids", status_code=status.HTTP_200_OK)
 async def patch_lab_ids(request: RequestChange, response: Response):
-    print(request)
-    if request.id is None != request.before_labID is None:
+    if sum((value[1] is not None) for value in request) != 2:
         response.status_code = status.HTTP_400_BAD_REQUEST
-        return "You must specify either the 'id' or 'before_labID'; both cannot be omitted."
+        return "You must specify either the 'id', 'identifier' or 'before_labID'; both cannot be omitted."
     elif request.after_labID is None:
         response.status_code = status.HTTP_400_BAD_REQUEST
         return "after_labID is required."
-    elif request.before_labID not in sender_manager.get_all_lab_id():
+    elif (
+        request.before_labID is not None
+        and request.before_labID not in sender_manager.get_all_lab_id()
+    ):
         response.status_code = status.HTTP_400_BAD_REQUEST
         return "before_labID does not exist."
     elif request.after_labID in sender_manager.get_all_lab_id():
         response.status_code = status.HTTP_400_BAD_REQUEST
         return "after_labID already exists."
+
+    if request.id is not None:
+        before = sender_manager.get_lab_id(request.id)
+    elif request.identifier is not None:
+        before = sender_manager.get_lab_id_from_identifier(request.identifier)
+    else:
+        before = request.before_labID
+
+    if not before:
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return "requested sender is not found."
+
     try:
-        before = (
-            sender_manager.get_lab_id(request.id)
-            if request.before_labID is None
-            else request.before_labID
+        sender_manager.change_lab_id(
+            before_lab_id=before,
+            after_lab_id=request.after_labID,
         )
         await ws_manager.send_change_lab_id(before, request.after_labID)
-        sender_manager.change_lab_id(
-            after_lab_id=request.after_labID,
-            id=request.id,
-            before_lab_id=request.before_labID,
-        )
         return {"status": "labID changed."}
     except psycopg.DatabaseError as error:
         print(error)
