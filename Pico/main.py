@@ -120,13 +120,15 @@ async def main_loop():
                 if not await master.ws.handshake(config.api_server):
                     raise Exception("Handshake error.")
                 print("Handshake complete.")
-
-                await master.ws.send(
-                    json.dumps({"uuid": master.machine_id, "labID": master.labID})
+                sender_info = json.dumps(
+                    {
+                        "uuid": master.machine_id,
+                        "identifier": master.identifier,
+                        "labID": master.labID,
+                    }
                 )
-                print(
-                    f'send: {json.dumps({"uuid": master.machine_id, "labID": master.labID})}'
-                )
+                await master.ws.send(sender_info)
+                print(f"send: {sender_info}")
                 init_info = await master.ws.recv()
                 master.labID = json.loads(init_info)["labID"]
                 print(f"my labID: {master.labID}, received info: {init_info}")

@@ -1,3 +1,4 @@
+IDENTIFIER: str = "***"
 LAB_ID: str = "***"
 
 API_SERVER: str = "ws://***"
