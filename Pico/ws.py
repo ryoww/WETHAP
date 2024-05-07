@@ -1,4 +1,11 @@
-# https://github.com/Vovaman/micropython_async_websocket_client
+# Original code licensed under Apache License, Version 2.0
+# (https://www.apache.org/licenses/LICENSE-2.0)
+# Original repository: [https://github.com/Vovaman/micropython_async_websocket_client]
+
+# Changes made:
+# 1. Updated imports to align with the latest standard library.
+# 2. Merged pull request #15.
+# 3. Formatted the code.
 
 import asyncio
 import binascii
