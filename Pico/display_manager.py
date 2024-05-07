@@ -10,17 +10,16 @@ except ImportError:
 
 
 class DisplayManager:
-    """ssd1306表示処理をまとめたクラス
-    Args:
-        i2c (I2C): I2Cオブジェクト
-        margin (int, optional): 文字間のマージン量
-        width (int, optional): ssd1306デバイスの横ピクセル数
-        height (int, optional): ssd1306デバイスの縦ピクセル数
-    """
-
     def __init__(
         self, i2c: I2C, margin: int = 3, width: int = 128, height: int = 64
     ) -> None:
+        """ssd1306表示処理をまとめたクラス
+        Args:
+            i2c (I2C): I2Cオブジェクト
+            margin (int, optional): 文字間のマージン量
+            width (int, optional): ssd1306デバイスの横ピクセル数
+            height (int, optional): ssd1306デバイスの縦ピクセル数
+        """
         self.grid: int = 8
         self.width: int = width
         self.height: int = height

@@ -119,7 +119,7 @@ async def main_loop():
                 print("Handshaking...")
                 if not await master.ws.handshake(config.api_server):
                     raise Exception("Handshake error.")
-                print("...handshaked.")
+                print("Handshake complete.")
 
                 await master.ws.send(
                     json.dumps({"uuid": master.machine_id, "labID": master.labID})

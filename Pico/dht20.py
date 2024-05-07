@@ -1,106 +1,79 @@
-# https://github.com/flrrth/pico-dht20
+from time import sleep_ms
 
 from machine import I2C
-from utime import sleep_ms
 
 
 class DHT20:
-    """Class for the DHT20 Temperature and Humidity Sensor.
+    def __init__(self, address: int, i2c: I2C, max_wait: int = 100, max_retry: int = 3):
+        """DHT20温湿度センサ
 
-    The datasheet can be found at http://www.aosong.com/userfiles/files/media/Data%20Sheet%20DHT20%20%20A1.pdf
-    """
-
-    def __init__(self, address: int, i2c: I2C):
-        self._address = address
-        self._i2c = i2c
+        Args:
+            address (int): センサのアドレス
+            i2c (I2C): I2Cオブジェクト
+            max_wait (int, optional): センサ読み取りの最大待ち時間(ms). Defaults to 100.
+            max_retry (int, optional): 読み取り結果のCRC不整合時の最大再試行回数. Defaults to 3.
+        """
+        self.address = address
+        self.i2c = i2c
+        self.max_wait = max_wait
+        self.max_retry = max_retry
+        self.polynomial = 0x131
         sleep_ms(100)
 
-        if not self.is_ready:
-            self._initialize()
+        if not self.is_ready():
+            self.initialize()
             sleep_ms(100)
+            if not self.is_ready():
+                raise RuntimeError("DHT20 initialize failed.")
 
-            if not self.is_ready:
-                raise RuntimeError("Could not initialize the DHT20.")
+    def get_status(self):
+        data = self.i2c.readfrom(self.address, 1)
+        return data[0]
 
-    @property
-    def is_ready(self) -> bool:
-        """Check if the DHT20 is ready."""
-        self._i2c.writeto(self._address, bytearray(b"\x71"))
-        return self._i2c.readfrom(self._address, 1)[0] == 0x18
+    def is_ready(self):
+        self.i2c.writeto(self.address, bytes([0x71]))
+        return (self.get_status() & 0x18) == 0x18
 
-    def _initialize(self):
-        buffer = bytearray(b"\x00\x00")
-        self._i2c.writeto_mem(self._address, 0x1B, buffer)
-        self._i2c.writeto_mem(self._address, 0x1C, buffer)
-        self._i2c.writeto_mem(self._address, 0x1E, buffer)
+    def initialize(self):
+        buffer = bytes([0x00, 0x00])
+        self.i2c.writeto_mem(self.address, 0x1B, buffer)
+        self.i2c.writeto_mem(self.address, 0x1C, buffer)
+        self.i2c.writeto_mem(self.address, 0x1E, buffer)
 
-    def _trigger_measurements(self):
-        self._i2c.writeto_mem(self._address, 0xAC, bytearray(b"\x33\x00"))
+    def read(self):
+        self.i2c.writeto_mem(self.address, 0xAC, bytes([0x33, 0x00]))
+        sleep_ms(80)
 
-    def _read_measurements(self):
-        buffer = self._i2c.readfrom(self._address, 7)
-        return buffer, buffer[0] & 0x80 == 0
+        for _ in range(self.max_wait):
+            if (self.get_status() & 0x80) != 0x80:
+                break
+            sleep_ms(1)
 
-    def _crc_check(self, input_bitstring: str, check_value: str) -> bool:
-        """Calculate the CRC check of a string of bits using a fixed polynomial.
+        data = self.i2c.readfrom(self.address, 7)
+        return data
 
-        See https://en.wikipedia.org/wiki/Cyclic_redundancy_check
-            https://xcore.github.io/doc_tips_and_tricks/crc.html#the-initial-value
+    def check_crc8(self, data):
+        crc = 0xFF
+        for byte in data:
+            crc ^= byte
+            for _ in range(8):
+                if crc & 0x80:
+                    crc = (crc << 1) ^ self.polynomial
+                else:
+                    crc <<= 1
+        return crc == 0
 
-        Keyword arguments:
-        input_bitstring -- the data to verify
-        check_value -- the CRC received with the data
-        """
+    def measurements(self):
+        for _ in range(self.max_retry + 1):
+            data = self.read()
+            if self.check_crc8(data):
+                break
+        else:
+            raise RuntimeError("CRC check error.")
 
-        polynomial_bitstring = "100110001"
-        len_input = len(input_bitstring)
-        initial_padding = check_value
-        input_padded_array = list(input_bitstring + initial_padding)
-
-        while "1" in input_padded_array[:len_input]:
-            cur_shift = input_padded_array.index("1")
-
-            for i in range(len(polynomial_bitstring)):
-                input_padded_array[cur_shift + i] = str(
-                    int(polynomial_bitstring[i] != input_padded_array[cur_shift + i])
-                )
-
-        return "1" not in "".join(input_padded_array)[len_input:]
-
-    @property
-    def measurements(self) -> dict:
-        """Get the temperature (°C) and relative humidity (%RH).
-
-        Returns a dictionary with the most recent measurements.
-
-        't': temperature (°C),
-        't_adc': the 'raw' temperature as produced by the ADC,
-        'rh': relative humidity (%RH),
-        'rh_adc': the 'raw' relative humidity as produced by the ADC,
-        'crc_ok': indicates if the data was received correctly
-        """
-        self._trigger_measurements()
-        sleep_ms(50)
-
-        data = self._read_measurements()
-        retry = 3
-
-        while not data[1]:
-            if not retry:
-                raise RuntimeError("Could not read measurements from the DHT20.")
-
-            sleep_ms(10)
-            data = self._read_measurements()
-            retry -= 1
-
-        buffer = data[0]
-        s_rh = buffer[1] << 12 | buffer[2] << 4 | buffer[3] >> 4
-        s_t = (buffer[3] << 16 | buffer[4] << 8 | buffer[5]) & 0xFFFFF
-        rh = (s_rh / 2**20) * 100
-        t = ((s_t / 2**20) * 200) - 50
-        crc_ok = self._crc_check(
-            f"{buffer[0] ^ 0xFF:08b}{buffer[1]:08b}{buffer[2]:08b}{buffer[3]:08b}{buffer[4]:08b}{buffer[5]:08b}",
-            f"{buffer[6]:08b}",
-        )
-
-        return {"t": t, "t_adc": s_t, "rh": rh, "rh_adc": s_rh, "crc_ok": crc_ok}
+        raw_temperature = (data[3] << 16 | data[4] << 8 | data[5]) & 0xFFFFF
+        raw_humidity = data[1] << 12 | data[2] << 4 | data[3] >> 4
+        humidity = (raw_humidity / 1048576) * 100
+        temperature = ((raw_temperature / 1048576) * 200) - 50
+        measurement = {"temperature": temperature, "humidity": humidity}
+        return measurement

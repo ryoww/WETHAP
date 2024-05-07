@@ -31,13 +31,8 @@ class EnvCollector:
         return self.using_sensors
 
     def collect_envs(self) -> dict[str, float]:
-        envs = self.sensor.measurements
-        envs = {
-            "temperature": envs["t"],
-            "humidity": envs["rh"],
-            "pressure": -1,
-            "gas": -1,
-        }
+        envs = self.sensor.measurements()
+        envs.update({"pressure": -1, "gas": -1})
         if self.sub_sensor:
             envs["pressure"] = self.sub_sensor.measurement()
         return envs
