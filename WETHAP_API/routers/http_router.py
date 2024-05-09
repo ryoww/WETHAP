@@ -197,9 +197,3 @@ async def get_rows(labID: str, rowLimit: int, descending: bool = True):
         lab_id=labID, row_limit=rowLimit, descending=descending
     )
     return response
-
-
-@router.get("/getInfo")
-async def get_a_info(labID: str, date: str, numGen: int):
-    response = infos_manager.select(lab_id=labID, date=date, num_gen=numGen)
-    return response if response else "NoData"
