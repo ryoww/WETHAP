@@ -130,7 +130,7 @@ class InfosManager(TableManager):
                 UPDATE {self.table} SET
                 lab_id = %s,
                 date = %s,
-                time = %s
+                time = %s,
                 num_gen = %s,
                 temperature = %s,
                 humidity = %s,
@@ -150,6 +150,7 @@ class InfosManager(TableManager):
             weather,
             id,
         )
+        print(query % params)
         return query, params
 
     def _remove(self, id: int) -> tuple[str, tuple]:
