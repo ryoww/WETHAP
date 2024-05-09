@@ -150,7 +150,6 @@ class InfosManager(TableManager):
             weather,
             id,
         )
-        print(query % params)
         return query, params
 
     def _remove(self, id: int) -> tuple[str, tuple]:
@@ -200,6 +199,27 @@ class InfosManager(TableManager):
             SELECT lab_id, date, time, num_gen, temperature, humidity, pressure, weather
             FROM {self.table} ORDER BY id
             """
+        )
+        records = self.cursor.fetchall()
+        return records
+
+    def get_rows(
+        self, lab_id: str, row_limit: int, descending: bool = True
+    ) -> list[INFO_TABLE_TYPES]:
+        """指定した研究室の最新のレコードを取得
+
+        Args:
+            lab_id (str): 研究室名
+            row_limit (int): 取得したい行数
+            descending (bool): date, timeの降順・昇順 どちらでレコード取得するか デフォルトで降順(True)
+
+        Returns:
+            list[INFO_TABLE_TYPES]: レコード
+        """
+        order = "DESC" if descending else "ASC"
+        self.cursor.execute(
+            f"SELECT * FROM {self.table} WHERE lab_id = %s ORDER BY date {order}, time {order} LIMIT %s;",
+            (lab_id, row_limit),
         )
         records = self.cursor.fetchall()
         return records
