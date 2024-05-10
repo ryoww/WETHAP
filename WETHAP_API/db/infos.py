@@ -1,7 +1,7 @@
 import datetime
 from decimal import Decimal
-from psycopg import sql
 
+from psycopg import sql
 from utils.db_util import TableManager
 
 
@@ -53,7 +53,7 @@ class InfosManager(TableManager):
         self.connection.commit()
 
     def select(
-        self, lab_id: str, date: str, num_gen: int, wrap: bool = False
+        self, lab_id: str, date: str, num_gen: int, wrap: bool = True
     ) -> INFO_TABLE_TYPES:
         """条件に合うレコードを取得
 

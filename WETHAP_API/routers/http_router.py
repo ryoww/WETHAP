@@ -1,10 +1,11 @@
 import os
 
 import dotenv
-from fastapi import APIRouter, Response, status
-from managers import infos_manager, sender_manager, ws_manager
-from utils.fetch_weather import fetch_weather
 import psycopg
+from fastapi import APIRouter, Response, status
+from managers import infos_manager, manual_infos_manager, sender_manager, ws_manager
+from utils.fetch_weather import fetch_weather
+
 from routers.router_depends import Info, RequestChange, RequestInfo
 
 dotenv.load_dotenv()
@@ -65,7 +66,7 @@ async def preview_raw_data():
 
 @router.get("/getInfo")
 async def get_a_info(labID: str, date: str, numGen: int):
-    response = infos_manager.select(lab_id=labID, date=date, num_gen=numGen)
+    response = infos_manager.select(lab_id=labID, date=date, num_gen=numGen, wrap=False)
     return response if response else "NoData"
 
 
@@ -193,7 +194,7 @@ async def post_request_info(request: RequestInfo, response: Response):
 
 @router.get("/get-rows")
 async def get_rows(labID: str, rowLimit: int, descending: bool = True):
-    response = infos_manager.get_rows(
+    response = manual_infos_manager.get_rows(
         lab_id=labID, row_limit=rowLimit, descending=descending
     )
     return response
