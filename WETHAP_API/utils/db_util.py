@@ -85,6 +85,30 @@ class TableManager(ABC):
         query, params = self._remove(*args, **kwargs)
         self.transaction(query, params)
 
+    def select_one(
+        self, query: str, params: tuple = None, wrap: bool = True
+    ) -> tuple | dict:
+        """条件に合うレコードを1つ取得"""
+        if wrap:
+            self.dict_cursor.execute(query, params)
+            records = self.dict_cursor.fetchone()
+        else:
+            self.cursor.execute(query, params)
+            records = self.cursor.fetchone()
+        return records
+
+    def select_all(
+        self, query: str, params: tuple = None, wrap: bool = True
+    ) -> list[tuple | dict]:
+        """条件に合うレコードを全て取得"""
+        if wrap:
+            self.dict_cursor.execute(query, params)
+            records = self.dict_cursor.fetchall()
+        else:
+            self.cursor.execute(query, params)
+            records = self.cursor.fetchall()
+        return records
+
     @abstractmethod
     def select(self) -> tuple:
         """条件に合うレコードを取得"""
