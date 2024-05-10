@@ -181,28 +181,6 @@ async def get_active_rooms():
     return response if response else "NoActiveRooms"
 
 
-# NOTE:/manualに移行予定
-@router.post("/request", status_code=status.HTTP_200_OK)
-async def post_request_info(request: RequestInfo, response: Response):
-    logger.info(f"receive request {request.labID}")
-    if request.labID in ws_manager.active_rooms:
-        await ws_manager.send_request_info(request.labID)
-        response.status_code = status.HTTP_202_ACCEPTED
-        return {"status": f"request sent to {request.labID}"}
-    else:
-        response.status_code = status.HTTP_400_BAD_REQUEST
-        return {"status": "non active room"}
-
-
-# NOTE:/manualに移行予定
-@router.get("/get-rows")
-async def get_rows(labID: str, rowLimit: int, descending: bool = True):
-    response = manual_infos_manager.get_rows(
-        lab_id=labID, row_limit=rowLimit, descending=descending
-    )
-    return response
-
-
 @router.get("/manual")
 async def get_manual(labID: str, rowLimit: int, descending: bool = True):
     response = manual_infos_manager.get_rows(
