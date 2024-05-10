@@ -218,8 +218,8 @@ class InfosManager(TableManager):
         """
         order = "DESC" if descending else "ASC"
         self.cursor.execute(
-            f"SELECT * FROM {self.table} WHERE lab_id = %s ORDER BY date {order}, time {order} LIMIT %s;",
-            (lab_id, row_limit),
+            f"SELECT * FROM {self.table} WHERE lab_id = %s ORDER BY date %s, time %s LIMIT %s;",
+            (lab_id, order, order, row_limit),
         )
         records = self.cursor.fetchall()
         return records
