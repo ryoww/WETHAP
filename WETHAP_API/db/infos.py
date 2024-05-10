@@ -220,35 +220,3 @@ class InfosManager(TableManager):
         ).format(table=sql.Identifier(self.table))
         records = self.select_all(query, wrap=wrap)
         return records
-
-    def get_rows(
-        self,
-        lab_id: str,
-        row_limit: int,
-        descending: bool = True,
-        manual_only: bool = False,
-        wrap: bool = False,
-    ) -> list[INFO_TABLE_TYPES]:
-        """指定した研究室の最新のレコードを取得
-
-        Args:
-            lab_id (str): 研究室名
-            row_limit (int): 取得したい行数
-            descending (bool): date, timeの降順・昇順 どちらでレコード取得するか デフォルトで降順(True)
-
-        Returns:
-            list[INFO_TABLE_TYPES]: レコード
-        """
-        order = "DESC" if descending else "ASC"
-
-        query = sql.SQL(
-            "SELECT * FROM {table} WHERE lab_id = %s {manual} ORDER BY date {order}, time {order} LIMIT %s"
-        ).format(
-            table=sql.Identifier(self.table),
-            order=sql.SQL(order),
-            manual=sql.SQL("and num_gen IS NULL" if manual_only else ""),
-        )
-        params = (lab_id, row_limit)
-
-        records = self.select_all(query, params=params, wrap=wrap)
-        return records
