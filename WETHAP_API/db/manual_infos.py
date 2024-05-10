@@ -136,7 +136,7 @@ class ManualInfosManager(InfosManager):
         params = (lab_id, date, time, temperature, humidity, pressure, weather, id)
         return query, params
 
-    def preview_data(self, wrap: bool = False) -> list[INFO_TABLE_TYPES]:
+    def preview_data(self, wrap: bool = True) -> list[INFO_TABLE_TYPES]:
         """全レコードを取得
 
         Args:
@@ -160,7 +160,7 @@ class ManualInfosManager(InfosManager):
         row_limit: int,
         descending: bool = True,
         manual_only: bool = False,
-        wrap: bool = False,
+        wrap: bool = True,
     ) -> list[INFO_TABLE_TYPES]:
         """指定した研究室の最新のレコードを取得
 
