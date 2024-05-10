@@ -186,25 +186,29 @@ class InfosManager(TableManager):
         rooms = [record[0] for record in records]
         return rooms
 
-    def preview_data(
-        self,
-    ) -> list[INFO_TABLE_TYPES]:
+    def preview_data(self, wrap: bool = False) -> list[INFO_TABLE_TYPES]:
         """全レコードを取得
+
+        Args:
+            wrap (bool, optional): dict形式で返すか. Defaults to False.
 
         Returns:
             list[INFO_TABLE_TYPES]: 全レコード
         """
-        self.cursor.execute(
-            f"""
+        query = f"""
             SELECT lab_id, date, time, num_gen, temperature, humidity, pressure, weather
             FROM {self.table} ORDER BY id
             """
-        )
-        records = self.cursor.fetchall()
+        records = self.select_all(query, wrap=wrap)
         return records
 
     def get_rows(
-        self, lab_id: str, row_limit: int, descending: bool = True
+        self,
+        lab_id: str,
+        row_limit: int,
+        descending: bool = True,
+        manual_only: bool = False,
+        wrap: bool = False,
     ) -> list[INFO_TABLE_TYPES]:
         """指定した研究室の最新のレコードを取得
 
@@ -217,9 +221,11 @@ class InfosManager(TableManager):
             list[INFO_TABLE_TYPES]: レコード
         """
         order = "DESC" if descending else "ASC"
-        self.cursor.execute(
-            f"SELECT * FROM {self.table} WHERE lab_id = %s ORDER BY date %s, time %s LIMIT %s;",
-            (lab_id, order, order, row_limit),
-        )
-        records = self.cursor.fetchall()
+        if manual_only:
+            query = f"SELECT * FROM {self.table} WHERE lab_id = %s and num_gen = NULL ORDER BY date %s, time %s LIMIT %s;"
+        else:
+            query = f"SELECT * FROM {self.table} WHERE lab_id = %s ORDER BY date %s, time %s LIMIT %s;"
+        params = (lab_id, order, order, row_limit)
+
+        records = self.select_all(query, params=params, wrap=wrap)
         return records

@@ -85,12 +85,7 @@ class SenderManager(TableManager):
                 SELECT * FROM {self.table}
                 WHERE {' AND '.join(input_query)}
                 """
-        if wrap:
-            self.dict_cursor.execute(query, input_params)
-            record = self.dict_cursor.fetchone()
-        else:
-            self.cursor.execute(query, input_params)
-            record = self.cursor.fetchone()
+        record = self.select_one(query, input_params, wrap)
         return record
 
     def get_lab_id(self, id: str):
