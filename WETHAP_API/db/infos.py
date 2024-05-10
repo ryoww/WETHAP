@@ -222,7 +222,7 @@ class InfosManager(TableManager):
         """
         order = "DESC" if descending else "ASC"
         if manual_only:
-            query = f"SELECT * FROM {self.table} WHERE lab_id = %s and num_gen = NULL ORDER BY date %s, time %s LIMIT %s;"
+            query = f"SELECT * FROM {self.table} WHERE lab_id = %s and num_gen IS NULL ORDER BY date %s, time %s LIMIT %s;"
         else:
             query = f"SELECT * FROM {self.table} WHERE lab_id = %s ORDER BY date %s, time %s LIMIT %s;"
         params = (lab_id, order, order, row_limit)
