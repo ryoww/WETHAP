@@ -53,7 +53,7 @@ async def registered_rooms():
 
 @router.get("/previewData")
 async def preview_data():
-    response = infos_manager.preview_data()
+    response = infos_manager.preview_data(False)
     return response
 
 

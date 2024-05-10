@@ -2,6 +2,7 @@ import re
 from abc import ABC, abstractmethod
 
 import psycopg
+from psycopg import sql
 from psycopg.rows import dict_row
 
 
@@ -29,19 +30,25 @@ class TableManager(ABC):
         """テーブルを作成"""
         raise NotImplementedError
         self.cursor.execute(
-            f"""
-            CREATE TABLE IF NOT EXISTS {self.table} (
-                id serial PRIMARY KEY,
-                create_at timestamptz NOT NULL DEFAULT current_timestamp,
-                update_at timestamptz NOT NULL DEFAULT current_timestamp
-            )
-            """
+            sql.SQL(
+                """
+                CREATE TABLE IF NOT EXISTS {table} (
+                    id serial PRIMARY KEY,
+                    create_at timestamptz NOT NULL DEFAULT current_timestamp,
+                    update_at timestamptz NOT NULL DEFAULT current_timestamp
+                )
+                """
+            ).format(table=sql.Identifier(self.table))
         )
         self.connection.commit()
 
     def delete_table(self) -> None:
         """テーブルを削除"""
-        self.cursor.execute(f"DROP TABLE IF EXISTS {self.table}")
+        self.cursor.execute(
+            sql.SQL("DROP TABLE IF EXISTS {table}").format(
+                table=sql.Identifier(self.table)
+            )
+        )
         self.connection.commit()
 
     def init_table(self) -> None:
@@ -51,7 +58,9 @@ class TableManager(ABC):
 
     def get_all(self, wrap: bool = True) -> list:
         """全レコードを取得"""
-        query = f"SELECT * FROM {self.table}"
+        query = sql.SQL("SELECT {fields} FROM {table}").format(
+            table=sql.Identifier(self.table), fields=sql.SQL("*")
+        )
         if wrap:
             self.dict_cursor.execute(query)
             records = self.dict_cursor.fetchall()
@@ -110,46 +119,54 @@ class TableManager(ABC):
         return records
 
     @abstractmethod
-    def select(self) -> tuple:
+    def select(self, wrap: bool) -> tuple:
         """条件に合うレコードを取得"""
         raise NotImplementedError
-        self.cursor.execute(
-            f"""
-            SELECT * FROM {self.table}
+        query = sql.SQL(
+            """
+            SELECT {fields} FROM {table}
             WHERE
-            """,
-            (),
-        )
-        return self.cursor.fetchone()
+            """
+        ).format(table=sql.Identifier(self.table), fields=sql.SQL("*"))
+        params: tuple | None = ()
+        record = self.select_all(query, params, wrap=wrap)
+        record = self.select_one(query, params, wrap=wrap)
+        return record
 
     @abstractmethod
     def _insert(self) -> tuple[str, tuple]:
         raise NotImplementedError
-        query = f"""
-                INSERT INTO {self.table} ( )
-                VALUES ( )
-                """
+        query = sql.SQL(
+            """
+            INSERT INTO {table} ( )
+            VALUES ( )
+            """
+        ).format(table=sql.Identifier(self.table))
         params = ()
         return query, params
 
     @abstractmethod
     def _update(self) -> tuple[str, tuple]:
         raise NotImplementedError
-        query = f"""
-                UPDATE {self.table} SET
-                update_at = current_timestamp
-                WHERE
-                """
+        query = sql.SQL(
+            """
+            UPDATE {table} SET
+            update_at = current_timestamp
+            WHERE
+            """
+        ).format(table=sql.Identifier(self.table))
         params = ()
         return query, params
 
     @abstractmethod
     def _remove(self) -> tuple[str, tuple]:
         raise NotImplementedError
-        query = f"""
-            DELETE FROM {self.table}
+        query = sql.SQL(
+            """
+            DELETE FROM {table}
             WHERE
             """
+        ).format(table=sql.Identifier(self.table))
         params = ()
         return query, params
 

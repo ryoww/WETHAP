@@ -1,6 +1,6 @@
 import datetime
 
-from managers import infos_manager, sender_manager
+from managers import infos_manager, sender_manager, manual_infos_manager
 
 # infos_manager.init_table()
 # infos_manager.delete_table()
@@ -11,5 +11,6 @@ from managers import infos_manager, sender_manager
 print(infos_manager.preview_data())
 
 # sender_manager.init_table()
-sender_manager.change_lab_id(before_lab_id="T4教室", after_lab_id="高野家")
 print(sender_manager.get_all())
+
+# manual_infos_manager.init_table()

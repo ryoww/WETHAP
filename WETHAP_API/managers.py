@@ -2,6 +2,7 @@ import os
 
 import dotenv
 from db.infos import InfosManager
+from db.manual_infos import ManualInfosManager
 from db.sender import SenderManager
 from utils.ws_manager import SenderWebsocketManager
 
@@ -14,4 +15,5 @@ db_config = {
 
 ws_manager = SenderWebsocketManager()
 infos_manager = InfosManager(table="infos", **db_config)
+manual_infos_manager = ManualInfosManager(table="manual_infos", **db_config)
 sender_manager = SenderManager(table="senders", **db_config)

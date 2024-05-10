@@ -5,7 +5,7 @@ import dotenv
 import psycopg
 from fastapi import APIRouter
 from fastapi.websockets import WebSocket, WebSocketDisconnect
-from managers import infos_manager, sender_manager, ws_manager
+from managers import infos_manager, manual_infos_manager, sender_manager, ws_manager
 from utils.fetch_weather import fetch_weather
 
 dotenv.load_dotenv()
@@ -57,16 +57,27 @@ async def websocket_endpoint(websocket: WebSocket):
             data = await websocket.receive_json()
             if (info := data.get("info")) is not None:
                 try:
-                    infos_manager.insert(
-                        lab_id=info["labID"],
-                        date=info.get("date", str(datetime.date.today())),
-                        time=info.get("time"),
-                        num_gen=info.get("numGen"),
-                        temperature=info["temperature"],
-                        humidity=info["humidity"],
-                        pressure=info["pressure"],
-                        weather=fetch_weather(),
-                    )
+                    if info.get("numGen"):
+                        infos_manager.insert(
+                            lab_id=info["labID"],
+                            date=info.get("date", str(datetime.date.today())),
+                            time=info.get("time"),
+                            num_gen=info.get("numGen"),
+                            temperature=info["temperature"],
+                            humidity=info["humidity"],
+                            pressure=info["pressure"],
+                            weather=fetch_weather(),
+                        )
+                    else:
+                        manual_infos_manager.insert(
+                            lab_id=info["labID"],
+                            date=info.get("date", str(datetime.date.today())),
+                            time=info.get("time"),
+                            temperature=info["temperature"],
+                            humidity=info["humidity"],
+                            pressure=info["pressure"],
+                            weather=fetch_weather(),
+                        )
                     result = {"status": "success", "info": {str(info)}}
                     print(result)
                 except psycopg.DatabaseError as error:
