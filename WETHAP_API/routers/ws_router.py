@@ -79,10 +79,9 @@ async def websocket_endpoint(websocket: WebSocket):
                             pressure=info["pressure"],
                             weather=fetch_weather(),
                         )
-                    result = {"status": "success", "info": {str(info)}}
-                    logger.info(f"insert info: {result}")
+                    logger.info(f"insert info: {str(info)}")
                 except psycopg.DatabaseError as error:
-                    logger.error(f"insert info: {error}")
+                    logger.error(f"insert error: {error}")
 
     except WebSocketDisconnect:
         ws_manager.disconnect(websocket)

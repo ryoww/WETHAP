@@ -1,13 +1,6 @@
 import logging
 
-logger = logging.getLogger()
-
-formatter = logging.Formatter("%(levelname)s;\t%(message)s")
-handler = logging.StreamHandler()
-handler.setFormatter(formatter)
+logger = logging.getLogger("uvicorn.app")
 
 logger.setLevel(logging.INFO)
-logger.addHandler(handler)
-
-
-logger.info("create logger")
+logger.addHandler(logging.StreamHandler())
