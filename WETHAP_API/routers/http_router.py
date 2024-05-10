@@ -3,6 +3,7 @@ import os
 import dotenv
 import psycopg
 from fastapi import APIRouter, Response, status
+from logger import logger
 from managers import infos_manager, manual_infos_manager, sender_manager, ws_manager
 from utils.fetch_weather import fetch_weather
 
@@ -20,7 +21,7 @@ async def index():
 
 @router.post("/addInfo", status_code=status.HTTP_200_OK)
 async def add_info(info: Info, response: Response):
-    print(f"addInfo request: {info}")
+    logger.info(f"addInfo request: {info}")
     info = {
         "lab_id": info.labID,
         "date": info.date,
@@ -35,7 +36,7 @@ async def add_info(info: Info, response: Response):
         infos_manager.insert(**info)
         return {"status": "added", "info": info}
     except psycopg.DatabaseError as error:
-        print(error)
+        logger.error(error)
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {"status": "failed"}
 
@@ -88,7 +89,7 @@ async def get_info(labID: str, date: str, numGen: int):
 
 @router.post("/info", status_code=status.HTTP_200_OK)
 async def post_info(info: Info, response: Response):
-    print(f"post info request: {info}")
+    logger.info(f"post info request: {info}")
     info = {
         "lab_id": info.labID,
         "date": info.date,
@@ -103,19 +104,19 @@ async def post_info(info: Info, response: Response):
         infos_manager.insert(**info)
         return {"status": "added", "info": info}
     except psycopg.DatabaseError as error:
-        print(error)
+        logger.error(error)
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {"status": "failed"}
 
 
 @router.delete("/info", status_code=status.HTTP_200_OK)
 async def delete_info(id: int, response: Response):
-    print(f"delete info request: {id=}")
+    logger.info(f"delete info request: {id=}")
     try:
         infos_manager.remove(id=id)
         return {"status": "deleted", "id": id}
     except psycopg.DatabaseError as error:
-        print(error)
+        logger.error(error)
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {"status": "failed"}
 
@@ -169,7 +170,7 @@ async def patch_lab_ids(request: RequestChange, response: Response):
         await ws_manager.send_change_lab_id(before, request.after_labID)
         return {"status": "labID changed."}
     except psycopg.DatabaseError as error:
-        print(error)
+        logger.error(error)
         response.status_code = status.HTTP_400_BAD_REQUEST
         return "before_labID is an non-existent labID."
 
@@ -183,7 +184,7 @@ async def get_active_rooms():
 # NOTE:/manualに移行予定
 @router.post("/request", status_code=status.HTTP_200_OK)
 async def post_request_info(request: RequestInfo, response: Response):
-    print(f"receive request {request.labID}")
+    logger.info(f"receive request {request.labID}")
     if request.labID in ws_manager.active_rooms:
         await ws_manager.send_request_info(request.labID)
         response.status_code = status.HTTP_202_ACCEPTED

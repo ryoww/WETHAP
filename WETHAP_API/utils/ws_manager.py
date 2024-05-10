@@ -1,6 +1,7 @@
 from typing import Any
 
 from fastapi import WebSocket
+from logger import logger
 
 
 class WebsocketManager:
@@ -56,11 +57,11 @@ class SenderWebsocketManager(WebsocketManager):
         for ws in self.active_connections:
             if self.connection_infos[ws]["labID"] == lab_id:
                 await ws.send_json({"message": "request info"})
-                print(f"send request to {lab_id}")
+                logger.info(f"send request to {lab_id}")
 
     async def send_change_lab_id(self, before, after):
         for ws in self.active_connections:
             if self.connection_infos[ws]["labID"] == before:
                 await ws.send_json({"message": "change labID", "new labID": after})
                 self.connection_infos[ws]["labID"] = after
-                print(f"send change labID {before} to {after}")
+                logger.info(f"send change labID {before} to {after}")

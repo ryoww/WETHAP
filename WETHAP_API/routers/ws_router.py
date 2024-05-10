@@ -5,6 +5,7 @@ import dotenv
 import psycopg
 from fastapi import APIRouter
 from fastapi.websockets import WebSocket, WebSocketDisconnect
+from logger import logger
 from managers import infos_manager, manual_infos_manager, sender_manager, ws_manager
 from utils.fetch_weather import fetch_weather
 
@@ -22,7 +23,7 @@ def prepare(data):
                 uuid=data["uuid"], identifier=data["identifier"], lab_id=data["labID"]
             )
         except psycopg.DatabaseError as error:
-            print(error)
+            logger.error(error)
         return data["labID"]
     else:
         new_id = sender_manager.get_all()[-1]["id"] + 1
@@ -32,7 +33,7 @@ def prepare(data):
                 uuid=data["uuid"], identifier=data["identifier"], lab_id=dummy_lab_id
             )
         except psycopg.DatabaseError as error:
-            print(error)
+            logger.error(error)
         return dummy_lab_id
 
 
@@ -43,14 +44,14 @@ async def websocket_endpoint(websocket: WebSocket):
         # NOTE: data = {"uuid": str, "identifier": str, "labID": str, (...)}
         data = await websocket.receive_json()
         if not all(data.get(key) for key in ("uuid", "identifier", "labID")):
-            print(f"disconnect ({data})")
+            logger.info(f"disconnect ({data})")
             ws_manager.disconnect(websocket)
             await websocket.close(1007)
             return
         lab_id = prepare(data)
         data["labID"] = lab_id
         ws_manager.update_info(websocket, data)
-        print(f"connect {lab_id}")
+        logger.info(f"connect {lab_id}")
         await websocket.send_json({"labID": lab_id})
 
         while True:
@@ -79,10 +80,9 @@ async def websocket_endpoint(websocket: WebSocket):
                             weather=fetch_weather(),
                         )
                     result = {"status": "success", "info": {str(info)}}
-                    print(result)
+                    logger.info(f"insert info: {result}")
                 except psycopg.DatabaseError as error:
-                    print(error)
-                    print({"status": "failed"})
+                    logger.error(f"insert info: {error}")
 
     except WebSocketDisconnect:
         ws_manager.disconnect(websocket)

@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 import psycopg
 from psycopg import sql
 from psycopg.rows import dict_row
+from logger import logger
 
 
 class TableManager(ABC):
@@ -75,7 +76,7 @@ class TableManager(ABC):
             self.connection.commit()
         except psycopg.DatabaseError as error:
             query = re.sub("\n *", " ", query)
-            print(f"transaction error: {query=}, {params=}")
+            logger.error(f"transaction error: {query=}, {params=}")
             self.connection.rollback()
             raise error
 

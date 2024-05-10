@@ -6,6 +6,7 @@ import dotenv
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from logger import logger
 from managers import ws_manager
 from routers import http_router, ws_router
 
@@ -46,7 +47,7 @@ def get_num_gen():
 async def request_info():
     num_gen = get_num_gen()
     message = {"message": "request info", "numGen": num_gen}
-    print(message)
+    logger.info(f"request info at num_gen: {num_gen}")
     await ws_manager.broadcast(message)
 
 
@@ -93,7 +94,7 @@ async def main():
     try:
         await asyncio.gather(*tasks)
     except asyncio.CancelledError:
-        print("server killed")
+        logger.critical("server killed")
 
 
 if __name__ == "__main__":
