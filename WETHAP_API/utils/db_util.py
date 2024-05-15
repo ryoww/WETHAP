@@ -57,6 +57,12 @@ class TableManager(ABC):
         self.delete_table()
         self.create_table()
 
+    def truncate(self) -> None:
+        """テーブルの内容を全て削除"""
+        self.cursor.execute(
+            sql.SQL("TRUNCATE {table}").format(table=sql.Identifier(self.table))
+        )
+
     def get_all(self, wrap: bool = True) -> list:
         """全レコードを取得"""
         query = sql.SQL("SELECT {fields} FROM {table}").format(
