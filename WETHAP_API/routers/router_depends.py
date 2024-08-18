@@ -15,6 +15,7 @@ class Info(BaseModel):
 
 class RequestInfo(BaseModel):
     labID: str
+    standby_sec: int = 5
 
 
 class RequestChange(BaseModel):

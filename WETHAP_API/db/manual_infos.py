@@ -185,3 +185,11 @@ class ManualInfosManager(InfosManager):
 
         records = self.select_all(query, params=params, wrap=wrap)
         return records
+
+    def get_last(self, lab_id: str, wrap: bool = True):
+        query = sql.SQL(
+            "SELECT * FROM {table} WHERE lab_id = %s ORDER BY date DESC, time DESC LIMIT 1"
+        ).format(table=sql.Identifier(self.table))
+        params = (lab_id,)
+        record = self.select_one(query, params=params, wrap=wrap)
+        return record

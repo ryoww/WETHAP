@@ -1,3 +1,5 @@
+import asyncio
+from datetime import datetime, timezone
 import os
 
 import dotenv
@@ -192,9 +194,25 @@ async def get_manual(labID: str, rowLimit: int, descending: bool = True):
 @router.post("/manual", status_code=status.HTTP_200_OK)
 async def post_manual(request: RequestInfo, response: Response):
     if request.labID in ws_manager.active_rooms:
+        requested = datetime.now(tz=timezone.utc)
         await ws_manager.send_request_info(request.labID)
+        while (
+            datetime.now(tz=timezone.utc) - requested
+        ).total_seconds() <= request.standby_sec:
+            await asyncio.sleep(request.standby_sec / 10)
+            info = manual_infos_manager.get_last(request.labID)
+            if (
+                requested - (datetime.combine(info["date"], info["time"]))
+            ).total_seconds() <= request.standby_sec:
+                return {"status": f"request sent to {request.labID}", "info": info}
         response.status_code = status.HTTP_202_ACCEPTED
         return {"status": f"request sent to {request.labID}"}
     else:
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {"status": "non active room"}
+
+
+@router.get("/truncate")
+async def get_truncate():
+    manual_infos_manager.truncate()
+    return {"status": "manual infos table is truncated."}
