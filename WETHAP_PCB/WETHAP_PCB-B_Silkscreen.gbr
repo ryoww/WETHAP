@@ -1,12 +1,12 @@
-%TF.GenerationSoftware,KiCad,Pcbnew,7.0.9*%
-%TF.CreationDate,2023-12-19T03:36:14+09:00*%
+%TF.GenerationSoftware,KiCad,Pcbnew,8.0.3*%
+%TF.CreationDate,2024-07-17T23:21:38+09:00*%
 %TF.ProjectId,WETHAP_PCB,57455448-4150-45f5-9043-422e6b696361,rev?*%
 %TF.SameCoordinates,PX6d9c4d8PY8977a68*%
 %TF.FileFunction,Legend,Bot*%
 %TF.FilePolarity,Positive*%
 %FSLAX46Y46*%
 G04 Gerber Fmt 4.6, Leading zero omitted, Abs format (unit mm)*
-G04 Created by KiCad (PCBNEW 7.0.9) date 2023-12-19 03:36:14*
+G04 Created by KiCad (PCBNEW 8.0.3) date 2024-07-17 23:21:38*
 %MOMM*%
 %LPD*%
 G01*
