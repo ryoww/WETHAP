@@ -46,7 +46,6 @@ class InfosManager(TableManager):
                 """
                 CREATE UNIQUE INDEX ON {table} (lab_id, date, num_gen)
                 WHERE num_gen IS NOT NULL
-                )
                 """
             ).format(table=sql.Identifier(self.table))
         )
