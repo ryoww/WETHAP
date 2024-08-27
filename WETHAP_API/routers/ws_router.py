@@ -24,6 +24,8 @@ def prepare(data):
             )
         except psycopg.DatabaseError as error:
             logger.error(error)
+        if isinstance(data["labID"], bytes):
+            return data["labID"].decode()
         return data["labID"]
     else:
         new_id = sender_manager.get_all()[-1]["id"] + 1
