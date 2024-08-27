@@ -16,6 +16,8 @@ router = APIRouter(prefix=prefix)
 
 def prepare(data):
     if (record := sender_manager.select(uuid=data["uuid"], wrap=True)) is not None:
+        if isinstance(record["lab_id"], bytes):
+            return record["lab_id"].decode()
         return record["lab_id"]
     elif data["labID"] not in sender_manager.get_all_lab_id():
         try:
