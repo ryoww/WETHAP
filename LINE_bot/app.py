@@ -3,9 +3,12 @@
 
 from flask import Flask, request, abort
 
-from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
+
+from linebot.v3.messaging import MessagingApi
+from linebot.v3.webhook import WebhookHandler
+
 
 from wethapLine import handle_text
 
@@ -13,7 +16,7 @@ from key import at, sk
 
 app = Flask(__name__)
 
-line_bot_api = LineBotApi(at)
+line_bot_api = MessagingApi(at)
 handler = WebhookHandler(sk)
 
 @app.route("/", methods=['GET'])
