@@ -30,6 +30,7 @@ Flask==3.0.3
 fqdn==1.5.1
 frozenlist==1.4.1
 future==1.0.0
+gunicorn==23.0.0
 h11==0.14.0
 httpcore==1.0.5
 httpx==0.27.0
