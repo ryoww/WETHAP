@@ -1,0 +1,80 @@
+\documentclass[a4paper,10pt,twocolumn]{article}
+\usepackage{fontspec}
+\usepackage{luatexja-fontspec}
+\usepackage{graphicx}
+\usepackage{amsmath,amssymb}
+\usepackage[top=10truemm,bottom=25truemm,left=15truemm,right=15truemm,columnsep=5truemm]{geometry}
+\usepackage{hyperref}
+\usepackage[english,japanese]{babel}
+\usepackage{indentfirst}
+\setmainjfont{BIZ UDPGothic}[BoldFont = BIZ UDPGothicBold]
+\setmainfont{BIZ UDPGothic}[BoldFont = BIZ UDPGothicBold]
+\setsansjfont{BIZ UDPGothic}[BoldFont = BIZ UDPGothicBold]
+\setsansfont{BIZ UDPGothic}[BoldFont = BIZ UDPGothicBold]
+
+% 日本語と英語の著者・タイトル設定
+\title{IoT機器を用いた環境モニタリングと\\LINE bot/APIによるデータアクセスの実現}
+\author{
+顧問 : 設樂 勇 先生\\
+下沢 亮太郎　高野 陽大　豊田 アディール
+}
+
+\date{}
+
+\begin{document}
+
+\maketitle
+
+% \begin{abstract}
+% このテンプレートはLuaLaTeXを使用して日本語と英語の論文を二段組形式で作成するためのものです。本文は日本語と英語の両方で記述可能です。図や表を挿入する際は、LaTeXの標準機能を使用して作成してください。
+% \end{abstract}
+
+\section{開発背景}
+どのような実験をする場合でも日時,天気(WEther),気温(Temperature),湿度(Humidity),気圧(Air Pressure)を記録しておくことは基本である.
+
+しかし,人間として社会的生活を営んでいる限り記録のし忘れ等が起こりうるが,それをバックアップするシステムがないという問題がある.
+
+今回は,その問題を解決するためにWEHTAPというシステムを開発した.
+
+\section{使用機器}
+\setlength{\tabcolsep}{12pt}
+\renewcommand{\arraystretch}{1.5}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|c|c|c|}
+\hline
+項目 & 数量 & 備考 \\
+\hline
+りんご & 5 & 新鮮 \\
+バナナ & 3 & 少し黒ずんでいる \\
+オレンジ & 8 & 非常に甘い \\
+\hline
+\end{tabular}
+\caption{使用機器}
+\label{tab:fruits}
+\end{table}
+
+
+\section{数学の例}
+数式は以下のように挿入します：
+
+\begin{equation}
+E = mc^2
+\end{equation}
+
+\section{図の例}
+図は以下のように挿入します：
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.4\textwidth]{example-image}
+\caption{サンプル画像}
+\label{fig:example}
+\end{figure}
+
+
+\section{結論}
+二段組形式で、学術論文やレポートを作成する際に適したテンプレートです。フォントの設定やページレイアウトは、日本語と英語の文章を混在させる場合にも対応しています。
+
+\end{document}

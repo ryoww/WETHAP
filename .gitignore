@@ -2,6 +2,10 @@ LINE_bot/key.py
 nohup.out
 *-backups
 *-cache
-invoice/
 .env
 env.py
+
+*.aux
+*.log
+*.out
+*.synctex.gz
