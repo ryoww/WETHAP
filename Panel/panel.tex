@@ -7,6 +7,7 @@
 \usepackage{hyperref}
 \usepackage[english,japanese]{babel}
 \usepackage{indentfirst}
+\usepackage{booktabs}
 \setmainjfont{BIZ UDPGothic}[BoldFont = BIZ UDPGothicBold]
 \setmainfont{BIZ UDPGothic}[BoldFont = BIZ UDPGothicBold]
 \setsansjfont{BIZ UDPGothic}[BoldFont = BIZ UDPGothicBold]
@@ -39,6 +40,16 @@
 \section{使用機器}
 \setlength{\tabcolsep}{12pt}
 \renewcommand{\arraystretch}{1.5}
+
+\begin{table}[h]
+  \centering
+  \begin{tabular}{|c|c|}
+    \hline
+    機器名 & 備考 \\
+    \midrule
+    Raspberry Pi Pico W & 子機として使用\\
+  \end{tabular}
+\end{table}
 
 \begin{table}[h]
 \centering
