@@ -3,11 +3,13 @@
 \usepackage{luatexja-fontspec}
 \usepackage{graphicx}
 \usepackage{amsmath,amssymb}
-\usepackage[top=10truemm,bottom=25truemm,left=15truemm,right=15truemm,columnsep=5truemm]{geometry}
+\usepackage[top=10truemm,bottom=10truemm,left=15truemm,right=15truemm,columnsep=5truemm]{geometry}
 \usepackage{hyperref}
 \usepackage[english,japanese]{babel}
 \usepackage{indentfirst}
 \usepackage{booktabs}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{ulem}
 \setmainjfont{BIZ UDPGothic}[BoldFont = BIZ UDPGothicBold]
 \setmainfont{BIZ UDPGothic}[BoldFont = BIZ UDPGothicBold]
 \setsansjfont{BIZ UDPGothic}[BoldFont = BIZ UDPGothicBold]
@@ -26,66 +28,72 @@
 
 \maketitle
 
-% \begin{abstract}
-% このテンプレートはLuaLaTeXを使用して日本語と英語の論文を二段組形式で作成するためのものです。本文は日本語と英語の両方で記述可能です。図や表を挿入する際は、LaTeXの標準機能を使用して作成してください。
-% \end{abstract}
+\thispagestyle{empty}
 
 \section{開発背景}
+
 どのような実験をする場合でも日時,天気(WEther),気温(Temperature),湿度(Humidity),気圧(Air Pressure)を記録しておくことは基本である.
 
 しかし,人間として社会的生活を営んでいる限り記録のし忘れ等が起こりうるが,それをバックアップするシステムがないという問題がある.
 
-今回は,その問題を解決するためにWEHTAPというシステムを開発した.
+今回は,その問題を解決するためにWEHTAPという実験時の環境情報共有システムを開発した.
 
 \section{使用機器}
-\setlength{\tabcolsep}{12pt}
-\renewcommand{\arraystretch}{1.5}
 
-\begin{table}[h]
-  \centering
-  \begin{tabular}{|c|c|}
-    \hline
-    機器名 & 備考 \\
-    \midrule
-    Raspberry Pi Pico W & 子機として使用\\
-  \end{tabular}
-\end{table}
+通信にはRaspberry Pi Pico W,温湿度センサモジュールにはDHT20,気圧センサモジュールにはLPS25HBを使用した.
 
-\begin{table}[h]
-\centering
-\begin{tabular}{|c|c|c|}
-\hline
-項目 & 数量 & 備考 \\
-\hline
-りんご & 5 & 新鮮 \\
-バナナ & 3 & 少し黒ずんでいる \\
-オレンジ & 8 & 非常に甘い \\
-\hline
-\end{tabular}
-\caption{使用機器}
-\label{tab:fruits}
-\end{table}
-
-
-\section{数学の例}
-数式は以下のように挿入します：
-
-\begin{equation}
-E = mc^2
-\end{equation}
-
-\section{図の例}
-図は以下のように挿入します：
+また,オリジナルのプリント基板も作成した.
 
 \begin{figure}[h]
-\centering
-\includegraphics[width=0.4\textwidth]{example-image}
-\caption{サンプル画像}
-\label{fig:example}
+  \centering
+  \includegraphics[width=0.35\textwidth]{./assets/koki.jpg}
+  \caption{開発した子機}
+\end{figure}
+
+\section{環境データへのアクセス方法}
+
+使用者が容易に様々な方法で情報にアクセスできるようにした.
+
+\subsection{API}
+
+どのような開発環境でも実装しやすいように以下の画像のような情報を返答するAPIを実装した.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.27\textwidth]{./assets/API.png}
+  \caption{APIの返答例}
+\end{figure}
+
+\subsection{Webサイト}
+
+APIにリクエストを送る手段を持たない人のためにも簡単に見ることができるようにVue.jsを用いてWebサイトから簡単に見れるようにした.
+
+また,Webサイトの公開にはGitHub Pagesを使い\textcolor{blue}{\underline{https://ryoww.github.io/WETHAP/}}に公開した.
+
+以下に実際のサイトを示す.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.4\textwidth]{./assets/Web_1.png}
+  \caption{ホームページ}
 \end{figure}
 
 
-\section{結論}
-二段組形式で、学術論文やレポートを作成する際に適したテンプレートです。フォントの設定やページレイアウトは、日本語と英語の文章を混在させる場合にも対応しています。
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.4\textwidth]{./assets/Web_2.png}
+  \caption{表形式で研究室の環境情報を表示}
+\end{figure}
+
+\subsection{LINE bot}
+
+他にも,学生が普段から使っているチャットツールであるLINEで容易に環境情報にアクセスできるようにした.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.3\textwidth]{./assets/LINE.png}
+  \caption{LINE botに環境情報を聞いてる様子}
+\end{figure}
+
 
 \end{document}
